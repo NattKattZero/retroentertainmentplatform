@@ -20,8 +20,6 @@ def main():
     # display_surface = pygame.display.set_mode((1440, 900), pygame.FULLSCREEN)
     surface = pygame.Surface((cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width))
     cartridge = cart.load_cart(cart_file)
-    tile_map = cartridge.map[0]
-    attr_map = cartridge.attr_map[0]
     is_running = True
     while is_running:
         surface.fill(cartridge.lookup_universal_background_color())
@@ -30,16 +28,18 @@ def main():
                 is_running = False
         for row in range(0, cart.Map.section_height):
             for col in range(0, cart.Map.section_width):
-                tile_number = tile_map[row][col]
-                attr = attr_map[row][col]
+                tile_number = cartridge.map.get_tile(row, col+scroll_x)
+                attr = cartridge.map.get_attr(row, col+scroll_x)
                 if tile_number > 0:
                     tile = cartridge.tile_map[tile_number - 1]
                     tile_surface = surface_for_tile(tile, cartridge=cartridge, attr=attr)
-                    surface.blit(tile_surface, (scroll_x + (col * cart.TileMap.tile_width), row * cart.TileMap.tile_width))
+                    surface.blit(tile_surface, (col * cart.TileMap.tile_width, row * cart.TileMap.tile_width))
         # may want option for smoothscale
         pygame.transform.scale(surface, (1024, 768), display_surface)
         pygame.display.update()
-        # scroll_x -= 1
+        scroll_x += 1
+        if scroll_x > cart.Map.section_width * 2:
+            scroll_x = 0
         clock.tick(60)
     pygame.quit()
     return 0

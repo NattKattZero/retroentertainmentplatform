@@ -11,6 +11,7 @@ def compile_cart(filepath):
     tiles = b''
     tile_map = b''
     attr_map = b''
+    map_map = b''
     with open(filepath, 'r') as cart_source:
         current_section = ''
         for line in cart_source:
@@ -31,17 +32,25 @@ def compile_cart(filepath):
                     tile_map += raw_bytes
                 elif current_section == 'attr':
                     attr_map += raw_bytes
+                elif current_section == 'mapmap':
+                    map_map += raw_bytes
     # populating these feels really in-elegant, but I'm too stupid right now
     # to do it right
-    header_values = [16]
+    header_values = [20]
     header_values.append(len(palette) + header_values[0])
     header_values.append(len(tiles) + header_values[1])
     header_values.append(len(tile_map) + header_values[2])
+    header_values.append(len(attr_map) + header_values[3])
     header_bytes = [x.to_bytes(4, byteorder='big') for x in header_values]
     header = functools.reduce(lambda x,y: x + y, header_bytes)
     filename, _ = os.path.splitext(filepath)
     with open(filename + '.cart', 'wb') as output_cart:
-        output_cart.write(header + palette + tiles + tile_map + attr_map)
+        output_cart.write(header
+            + palette
+            + tiles
+            + tile_map
+            + attr_map
+            + map_map)
 
 
 def convert_to_bytes(line):

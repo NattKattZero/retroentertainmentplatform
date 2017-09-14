@@ -52,8 +52,8 @@ class Cart:
             self.background_color = palette_data[0]
             self.background_palettes[0] = (palette_data[1], palette_data[2], palette_data[3])
             self.background_palettes[1] = (palette_data[4], palette_data[5], palette_data[6])
-            self.background_palettes[2] = (palette_data[6], palette_data[7], palette_data[8])
-            self.background_palettes[3] = (palette_data[9], palette_data[10], palette_data[11])
+            self.background_palettes[2] = (palette_data[7], palette_data[8], palette_data[9])
+            self.background_palettes[3] = (palette_data[10], palette_data[11], palette_data[12])
             tile_data = cart_data[tile_offset:map_offset]
             self.tile_map = TileMap()
             self.tile_map.load(tile_data)

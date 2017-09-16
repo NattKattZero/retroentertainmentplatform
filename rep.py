@@ -10,6 +10,7 @@ import cart
 class Renderer:
     def __init__(self, cartridge):
         self.cartridge = cartridge
+        self.surface = None
 
     def render(self):
         self.scroll_x = 0
@@ -18,11 +19,11 @@ class Renderer:
         pygame.init()
         display_surface = pygame.display.set_mode((1024, 768))
         # display_surface = pygame.display.set_mode((1440, 900), pygame.FULLSCREEN)
-        surface = pygame.Surface((cart.Map.section_width * cart.TileMap.tile_width * 2, cart.Map.section_height * cart.TileMap.tile_width * 2))
+        self.surface = pygame.Surface((cart.Map.section_width * cart.TileMap.tile_width * 2, cart.Map.section_height * cart.TileMap.tile_width * 2))
         view_surface = pygame.Surface((cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width))
         # surface = pygame.Surface((cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width))
         # fill in the surface wth the first 4 map sections for testing
-        surface.fill(self.cartridge.lookup_universal_background_color())
+        self.surface.fill(self.cartridge.lookup_universal_background_color())
         for row in range(0, cart.Map.section_height * 2):
             for col in range(0, cart.Map.section_width * 2):
                 tile_number = self.cartridge.map.get_tile(row, col)
@@ -30,7 +31,7 @@ class Renderer:
                 if tile_number > 0:
                     tile = self.cartridge.tile_map[tile_number - 1]
                     tile_surface = self.surface_for_tile(tile, attr=attr)
-                    surface.blit(tile_surface, (col * cart.TileMap.tile_width, row * cart.TileMap.tile_width))
+                    self.surface.blit(tile_surface, (col * cart.TileMap.tile_width, row * cart.TileMap.tile_width))
         is_running = True
         while is_running:
             for event in pygame.event.get():
@@ -38,7 +39,7 @@ class Renderer:
                     is_running = False
             view_rects = self.scroll(5, 0, cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width)
             for dest_x, dest_y, x, y, width, height in view_rects:
-                view_surface.blit(surface, (dest_x, dest_y), area=(x, y, width, height))
+                view_surface.blit(self.surface, (dest_x, dest_y), area=(x, y, width, height))
             # view_surface.blit(surface, (0, 0), area=(scroll_x, 0, cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width))
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)

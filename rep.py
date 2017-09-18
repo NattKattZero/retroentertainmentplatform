@@ -40,14 +40,17 @@ class Renderer:
                     tile_surface = self.surface_for_tile(tile, attr=attr)
                     self.backing.blit(tile_surface, (col * cart.TileMap.tile_width, row * cart.TileMap.tile_width))
                 """
+        scroll_buffer = ScrollBuffer(renderer=self)
         is_running = True
         while is_running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     is_running = False
-            view_rects = self.scroll(2, 0, cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width)
-            for dest_x, dest_y, x, y, width, height in view_rects:
-                view_surface.blit(self.backing, (dest_x, dest_y), area=(x, y, width, height))
+            scroll_buffer.render(view_surface)
+            scroll_buffer.scroll(2, 5)
+            # view_rects = self.scroll(2, 0, cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width)
+#             for dest_x, dest_y, x, y, width, height in view_rects:
+#                 view_surface.blit(self.backing, (dest_x, dest_y), area=(x, y, width, height))
             # view_surface.blit(surface, (0, 0), area=(scroll_x, 0, cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width))
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)
@@ -143,6 +146,59 @@ class Renderer:
                 elif transform == 1:  # vertical axis flip
                     pix_array[7 - col, row] = color
         return surface
+        
+class ScrollBuffer:
+    quad_width = cart.Map.section_width * cart.TileMap.tile_width
+    quad_height = cart.Map.section_height * cart.TileMap.tile_width
+    
+    def __init__(self, renderer):
+        self.renderer = renderer
+        self.quadrants = [
+            pygame.Surface((cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width))
+            for i in range(0, 4)
+        ]
+        self.quadrants[0].fill((255, 0, 0))
+        self.quadrants[1].fill((0, 255, 0))
+        self.quadrants[2].fill((0, 0, 255))
+        self.quadrants[3].fill((255, 0, 255))
+        # left, top, right, bottom
+        self.view_rect = (
+            cart.Map.section_width * cart.TileMap.tile_width / 2,
+            cart.Map.section_height * cart.TileMap.tile_width / 2,
+            cart.Map.section_width * cart.TileMap.tile_width,
+            cart.Map.section_height * cart.TileMap.tile_width
+        )
+        
+    def scroll(self, delta_x, delta_y):
+        left, top, right, bottom = self.view_rect
+        left += delta_x
+        right += delta_x
+        if left >= ScrollBuffer.quad_width:
+            left = left - ScrollBuffer.quad_width
+            right = right - ScrollBuffer.quad_width
+            self.swap_vertical_axis()
+        top += delta_y
+        bottom += delta_y
+        if top >= ScrollBuffer.quad_height:
+            top = top - ScrollBuffer.quad_height
+            bottom = bottom - ScrollBuffer.quad_height
+            self.swap_horizontal_axis()
+        self.view_rect = [left, top, right, bottom]
+        
+    def swap_vertical_axis(self):
+        top_left, top_right, bottom_left, bottom_right = self.quadrants
+        self.quadrants = [top_right, top_left, bottom_right, bottom_left]
+        
+    def swap_horizontal_axis(self):
+        top_left, top_right, bottom_left, bottom_right = self.quadrants
+        self.quadrants = [bottom_left, bottom_right, top_left, top_right]
+        
+    def render(self, surface): 
+        left, top, right, bottom = self.view_rect
+        surface.blit(self.quadrants[0], (0, 0), area=(left, top, ScrollBuffer.quad_width - left, ScrollBuffer.quad_height - top))
+        surface.blit(self.quadrants[1], (ScrollBuffer.quad_width - left, 0), area=(0, 0, right, ScrollBuffer.quad_height - top))
+        surface.blit(self.quadrants[2], (0, ScrollBuffer.quad_height - top), area=(left, ScrollBuffer.quad_height - top, ScrollBuffer.quad_width - left, bottom))
+        surface.blit(self.quadrants[3], (ScrollBuffer.quad_width - left, ScrollBuffer.quad_height - top), area=(ScrollBuffer.quad_width - left, ScrollBuffer.quad_height - top, right, bottom))
 
 def main():
     parser = argparse.ArgumentParser()

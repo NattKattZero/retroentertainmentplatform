@@ -11,12 +11,6 @@ import cart
 class Renderer:
     def __init__(self, cartridge):
         self.cartridge = cartridge
-        self.scroll_x = 0
-        self.scroll_y = 0
-        self.scroll_col = 0
-        self.scroll_row = 0
-        self.scroll_col_acc = 0
-        self.scroll_row_acc = 0
 
     def render(self):
         clock = pygame.time.Clock()
@@ -31,7 +25,7 @@ class Renderer:
                 if event.type == pygame.QUIT:
                     is_running = False
             scroll_buffer.render(view_surface)
-            scroll_buffer.scroll(2, 3)
+            scroll_buffer.scroll(2, 0)
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)
             pygame.display.update()
@@ -97,8 +91,12 @@ class ScrollBuffer:
             bottom = bottom - ScrollBuffer.quad_height
             self.swap_horizontal_axis()
         self.view_rect = [left, top, right, bottom]
+        # temporary re-draw to test concept. Needs to work in all 4 directions and compensate for the # of tile cols
+        # advanced by the scrolling
+        self.redraw(col_range=range(math.floor(x / cart.TileMap.tile_width) + cart.Map.section_width - 1, math.ceil(x / cart.TileMap.tile_width) + cart.Map.section_width + 1))
         
-    def redraw(self):
+        
+    def redraw(self, row_range=None, col_range=None):
         left, top, right, bottom = self.view_rect
         x, y = self.map_coord
         start_col = math.floor((x - left) / cart.TileMap.tile_width)
@@ -116,11 +114,15 @@ class ScrollBuffer:
             else:  #  bottom right
                 quad_col = start_col + cart.Map.section_width
                 quad_row = start_row + cart.Map.section_height
-            quadrant.fill(self.renderer.cartridge.lookup_universal_background_color())
             for row in range(0, cart.Map.section_height):
+                map_row = quad_row + row
                 for col in range(0, cart.Map.section_width):
-                    tile_number = self.renderer.cartridge.map.get_tile(quad_row + row, quad_col + col)
-                    attr = self.renderer.cartridge.map.get_attr(quad_row + row, quad_col + col)
+                    map_col = quad_col + col
+                    if col_range and map_col not in col_range:
+                        continue
+                    quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(), (col * cart.TileMap.tile_width, row * cart.TileMap.tile_width, cart.TileMap.tile_width, cart.TileMap.tile_width))
+                    tile_number = self.renderer.cartridge.map.get_tile(map_row, map_col)
+                    attr = self.renderer.cartridge.map.get_attr(map_row, map_col)
                     if tile_number > 0:
                         tile = self.renderer.cartridge.tile_map[tile_number - 1]
                         tile_surface = self.renderer.surface_for_tile(tile, attr=attr)

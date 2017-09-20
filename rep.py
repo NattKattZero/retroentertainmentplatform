@@ -25,7 +25,7 @@ class Renderer:
                 if event.type == pygame.QUIT:
                     is_running = False
             scroll_buffer.render(view_surface)
-            scroll_buffer.scroll(2, 0)
+            scroll_buffer.scroll(0, 2)
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)
             pygame.display.update()
@@ -91,9 +91,19 @@ class ScrollBuffer:
             bottom = bottom - ScrollBuffer.quad_height
             self.swap_horizontal_axis()
         self.view_rect = [left, top, right, bottom]
-        # temporary re-draw to test concept. Needs to work in all 4 directions and compensate for the # of tile cols
-        # advanced by the scrolling
-        self.redraw(col_range=range(math.floor(x / cart.TileMap.tile_width) + cart.Map.section_width - 1, math.ceil(x / cart.TileMap.tile_width) + cart.Map.section_width + 1))
+        n_cols_redraw = abs(math.ceil(delta_x / cart.TileMap.tile_width))
+        n_rows_redraw = abs(math.ceil(delta_y / cart.TileMap.tile_width))
+        row_range = None
+        col_range = None
+        if delta_x > 0:
+            col_range = range(math.floor(x / cart.TileMap.tile_width) + cart.Map.section_width - 1, math.ceil(x / cart.TileMap.tile_width) + cart.Map.section_width + n_cols_redraw)
+        elif delta_x < 0:
+            col_range = range(math.floor(x / cart.TileMap.tile_width) - n_cols_redraw, math.ceil(x / cart.TileMap.tile_width) + 1)
+        if delta_y > 0:
+            row_range = range(math.floor(y / cart.TileMap.tile_width) + cart.Map.section_height - 1, math.ceil(y / cart.TileMap.tile_width) + cart.Map.section_height + n_rows_redraw)
+        elif delta_y < 0:
+            row_range = range(math.floor(y / cart.TileMap.tile_width) - n_rows_redraw, math.ceil(y / cart.TileMap.tile_width) + 1)
+        self.redraw(row_range=row_range, col_range=col_range)
         
         
     def redraw(self, row_range=None, col_range=None):
@@ -116,6 +126,8 @@ class ScrollBuffer:
                 quad_row = start_row + cart.Map.section_height
             for row in range(0, cart.Map.section_height):
                 map_row = quad_row + row
+                if row_range and map_row not in row_range:
+                    continue
                 for col in range(0, cart.Map.section_width):
                     map_col = quad_col + col
                     if col_range and map_col not in col_range:

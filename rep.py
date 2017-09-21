@@ -11,6 +11,7 @@ import cart
 class Renderer:
     def __init__(self, cartridge):
         self.cartridge = cartridge
+        self.tile_surface_cache = {}
 
     def render(self):
         clock = pygame.time.Clock()
@@ -25,16 +26,24 @@ class Renderer:
                 if event.type == pygame.QUIT:
                     is_running = False
             scroll_buffer.render(view_surface)
-            scroll_buffer.scroll(0, 2)
+            scroll_buffer.scroll(2, 0)
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)
             pygame.display.update()
             clock.tick(60)
         pygame.quit()
 
-    def surface_for_tile(self, tile, attr=0):
+    def surface_for_tile(self, map_row, map_col):
+        tile_number = self.cartridge.map.get_tile(map_row, map_col)
+        if tile_number <= 0:
+            return None
+        attr = self.cartridge.map.get_attr(map_row, map_col)
+        tile_lookup = (tile_number, attr)
+        if tile_lookup in self.tile_surface_cache:
+            return self.tile_surface_cache[tile_lookup]
         transform = (attr >> 4) & 0xF
         palette = attr & 0xF
+        tile = self.cartridge.tile_map[tile_number - 1]
         surface = pygame.Surface((cart.TileMap.tile_width, cart.TileMap.tile_width))
         pix_array = pygame.PixelArray(surface)
         for row in range(0, cart.TileMap.tile_width):
@@ -48,6 +57,7 @@ class Renderer:
                     pix_array[col, row] = color
                 elif transform == 1:  # vertical axis flip
                     pix_array[7 - col, row] = color
+        self.tile_surface_cache[tile_lookup] = surface
         return surface
         
 class ScrollBuffer:
@@ -133,11 +143,8 @@ class ScrollBuffer:
                     if col_range and map_col not in col_range:
                         continue
                     quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(), (col * cart.TileMap.tile_width, row * cart.TileMap.tile_width, cart.TileMap.tile_width, cart.TileMap.tile_width))
-                    tile_number = self.renderer.cartridge.map.get_tile(map_row, map_col)
-                    attr = self.renderer.cartridge.map.get_attr(map_row, map_col)
-                    if tile_number > 0:
-                        tile = self.renderer.cartridge.tile_map[tile_number - 1]
-                        tile_surface = self.renderer.surface_for_tile(tile, attr=attr)
+                    tile_surface = self.renderer.surface_for_tile(map_row, map_col)
+                    if tile_surface:
                         quadrant.blit(tile_surface, (col * cart.TileMap.tile_width, row * cart.TileMap.tile_width))
         
         

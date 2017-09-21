@@ -20,13 +20,23 @@ class Renderer:
         # display_surface = pygame.display.set_mode((1440, 900), pygame.FULLSCREEN)
         view_surface = pygame.Surface((cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width))
         scroll_buffer = ScrollBuffer(renderer=self)
+        scroll_x = 0
         is_running = True
         while is_running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     is_running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RIGHT:
+                        scroll_x = 5
+                    elif event.key == pygame.K_LEFT:
+                        scroll_x = -5
+                elif event.type == pygame.KEYUP:
+                    scroll_x = 0
+                    # print(event.key)
+            if scroll_x != 0:
+                scroll_buffer.scroll(scroll_x, 0)
             scroll_buffer.render(view_surface)
-            scroll_buffer.scroll(2, 0)
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)
             pygame.display.update()

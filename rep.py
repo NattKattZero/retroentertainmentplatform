@@ -33,7 +33,6 @@ class Renderer:
                         scroll_x = -5
                 elif event.type == pygame.KEYUP:
                     scroll_x = 0
-                    # print(event.key)
             if scroll_x != 0:
                 scroll_buffer.scroll(scroll_x, 0)
             scroll_buffer.render(view_surface)
@@ -104,11 +103,19 @@ class ScrollBuffer:
             left = left - ScrollBuffer.quad_width
             right = right - ScrollBuffer.quad_width
             self.swap_vertical_axis()
+        elif left <= 0:
+            left = left + ScrollBuffer.quad_width
+            right = right + ScrollBuffer.quad_width
+            self.swap_vertical_axis()
         top += delta_y
         bottom += delta_y
         if top >= ScrollBuffer.quad_height:
             top = top - ScrollBuffer.quad_height
             bottom = bottom - ScrollBuffer.quad_height
+            self.swap_horizontal_axis()
+        elif top <= 0:
+            top = top + ScrollBuffer.quad_height
+            bottom = bottom + ScrollBuffer.quad_height
             self.swap_horizontal_axis()
         self.view_rect = [left, top, right, bottom]
         n_cols_redraw = abs(math.ceil(delta_x / cart.TileMap.tile_width))

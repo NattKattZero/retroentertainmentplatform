@@ -130,11 +130,11 @@ class ScrollBuffer:
         if delta_x > 0:
             col_range = range(math.floor(x / cart.TileMap.tile_width) + cart.Map.section_width - 1, math.ceil(x / cart.TileMap.tile_width) + cart.Map.section_width + n_cols_redraw)
         elif delta_x < 0:
-            col_range = range(math.floor(x / cart.TileMap.tile_width) - n_cols_redraw, math.ceil(x / cart.TileMap.tile_width) + 1)
+            col_range = range(math.floor(x / cart.TileMap.tile_width) - n_cols_redraw - 1, math.ceil(x / cart.TileMap.tile_width))
         if delta_y > 0:
             row_range = range(math.floor(y / cart.TileMap.tile_width) + cart.Map.section_height - 1, math.ceil(y / cart.TileMap.tile_width) + cart.Map.section_height + n_rows_redraw)
         elif delta_y < 0:
-            row_range = range(math.floor(y / cart.TileMap.tile_width) - n_rows_redraw, math.ceil(y / cart.TileMap.tile_width) + 1)
+            row_range = range(math.floor(y / cart.TileMap.tile_width) - n_rows_redraw - 1, math.ceil(y / cart.TileMap.tile_width))
         self.redraw(row_range=row_range, col_range=col_range)
         
         

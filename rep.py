@@ -28,12 +28,17 @@ class Renderer:
                     is_running = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RIGHT:
-                        scroll_x = 5
+                        scroll_x = 1
                     elif event.key == pygame.K_LEFT:
-                        scroll_x = -5
+                        scroll_x = -1
                 elif event.type == pygame.KEYUP:
                     scroll_x = 0
             if scroll_x != 0:
+                if abs(scroll_x) < 10:
+                    if scroll_x > 0:
+                        scroll_x += 1
+                    else:
+                        scroll_x -= 1
                 scroll_buffer.scroll(scroll_x, 0)
             scroll_buffer.render(view_surface)
             # may want option for smoothscale

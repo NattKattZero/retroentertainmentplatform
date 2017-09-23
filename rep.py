@@ -26,11 +26,13 @@ class Renderer:
         # testing sprites
         camera = Camera(scroll_buffer=scroll_buffer)
         bob = self.surface_for_tile(0xD, attr=2)
-        bob_x = cart.Map.section_width / 2 * cart.TileMap.tile_width
-        bob_y = cart.Map.section_height / 2 * cart.TileMap.tile_width
+        game = Game()
+        bob_entity = Entity(x=cart.Map.section_width / 2 * cart.TileMap.tile_width, y=cart.Map.section_height / 2 * cart.TileMap.tile_width)
+        game.add_entity(bob_entity)
         # -
         is_running = True
         while is_running:
+            game.process()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     is_running = False
@@ -53,17 +55,17 @@ class Renderer:
                         pressed_keys.remove(event.key)
             for key in pressed_keys:
                 if key == pygame.K_RIGHT:
-                    bob_x += 5
+                    bob_entity.x += 5
                 elif key == pygame.K_LEFT:
-                    bob_x -= 5
+                    bob_entity.x -= 5
                 elif key == pygame.K_DOWN:
-                    bob_y += 5
+                    bob_entity.y += 5
                 elif key == pygame.K_UP:
-                    bob_y -= 5
-            camera.follow(bob_x, bob_y)
+                    bob_entity.y -= 5
+            camera.follow(bob_entity.x, bob_entity.y)
             scroll_buffer.render(view_surface)
             # testing sprites
-            sprite_coord = scroll_buffer.map_to_view_coord((bob_x, bob_y))
+            sprite_coord = scroll_buffer.map_to_view_coord((bob_entity.x, bob_entity.y))
             view_surface.blit(bob, sprite_coord)
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)
@@ -241,6 +243,27 @@ class ScrollBuffer:
         surface.blit(self.quadrants[2], (0, ScrollBuffer.quad_height - top), area=(left, 0, ScrollBuffer.quad_width - left, bottom))
         surface.blit(self.quadrants[3], (ScrollBuffer.quad_width - left, ScrollBuffer.quad_height - top), area=(0, 0, right, bottom))
         
+        
+class Entity:
+    def __init__(self, x=0, y=0):
+        self.x = x
+        self.y = y
+        
+class Game:
+    def __init__(self):
+        self.entities = set()
+        
+    def add_entity(self, entity):
+        self.entities.add(entity)
+        
+    def remove_entity(self, entity):
+        if entity in self.entities:
+            self.entities.remote(entity)
+    
+    def process(self):
+        for entity in self.entities:
+            entity.y += 1   
+    
 
 def main():
     parser = argparse.ArgumentParser()

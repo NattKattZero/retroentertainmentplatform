@@ -19,6 +19,7 @@ class Renderer:
         display_surface = pygame.display.set_mode((1024, 768))
         # display_surface = pygame.display.set_mode((1440, 900), pygame.FULLSCREEN)
         view_surface = pygame.Surface((cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width))
+        pressed_keys = set()
         scroll_buffer = ScrollBuffer(renderer=self)
         scroll_x = 0
         scroll_y = 0
@@ -35,30 +36,30 @@ class Renderer:
                     is_running = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RIGHT:
-                        scroll_x = 1
+                        if pygame.K_LEFT in pressed_keys:
+                            pressed_keys.remove(pygame.K_LEFT)
                     elif event.key == pygame.K_LEFT:
-                        scroll_x = -1
-                    elif event.key == pygame.K_DOWN:
-                        scroll_y += 1
+                        if pygame.K_RIGHT in pressed_keys:
+                            pressed_keys.remove(pygame.K_RIGHT)
                     elif event.key == pygame.K_UP:
-                        scroll_y -= 1
+                        if pygame.K_DOWN in pressed_keys:
+                            pressed_keys.remove(pygame.K_DOWN)
+                    elif event.key == pygame.K_DOWN:
+                        if pygame.K_UP in pressed_keys:
+                            pressed_keys.remove(pygame.K_UP)
+                    pressed_keys.add(event.key)
                 elif event.type == pygame.KEYUP:
-                    scroll_x = 0
-                    scroll_y = 0
-            if scroll_x != 0:
-                if abs(scroll_x) < 10:
-                    if scroll_x > 0:
-                        scroll_x += 1
-                    else:
-                        scroll_x -= 1
-                bob_x += scroll_x
-            if scroll_y != 0:
-                if abs(scroll_y) < 10:
-                    if scroll_y > 0:
-                        scroll_y += 1
-                    else:
-                        scroll_y -= 1
-                bob_y += scroll_y
+                    if event.key in pressed_keys:
+                        pressed_keys.remove(event.key)
+            for key in pressed_keys:
+                if key == pygame.K_RIGHT:
+                    bob_x += 5
+                elif key == pygame.K_LEFT:
+                    bob_x -= 5
+                elif key == pygame.K_DOWN:
+                    bob_y += 5
+                elif key == pygame.K_UP:
+                    bob_y -= 5
             camera.follow(bob_x, bob_y)
             scroll_buffer.render(view_surface)
             # testing sprites

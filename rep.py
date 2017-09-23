@@ -21,9 +21,12 @@ class Renderer:
         view_surface = pygame.Surface((cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width))
         scroll_buffer = ScrollBuffer(renderer=self)
         scroll_x = 0
+        scroll_y = 0
         # testing sprites
+        camera = Camera(scroll_buffer=scroll_buffer)
         bob = self.surface_for_tile(0xD, attr=2)
-        bob_x = 0
+        bob_x = cart.Map.section_width / 2 * cart.TileMap.tile_width
+        bob_y = cart.Map.section_height / 2 * cart.TileMap.tile_width
         # -
         is_running = True
         while is_running:
@@ -35,19 +38,31 @@ class Renderer:
                         scroll_x = 1
                     elif event.key == pygame.K_LEFT:
                         scroll_x = -1
+                    elif event.key == pygame.K_DOWN:
+                        scroll_y += 1
+                    elif event.key == pygame.K_UP:
+                        scroll_y -= 1
                 elif event.type == pygame.KEYUP:
                     scroll_x = 0
+                    scroll_y = 0
             if scroll_x != 0:
                 if abs(scroll_x) < 10:
                     if scroll_x > 0:
                         scroll_x += 1
                     else:
                         scroll_x -= 1
-                scroll_buffer.scroll(scroll_x, 0)
+                bob_x += scroll_x
+            if scroll_y != 0:
+                if abs(scroll_y) < 10:
+                    if scroll_y > 0:
+                        scroll_y += 1
+                    else:
+                        scroll_y -= 1
+                bob_y += scroll_y
+            camera.follow(bob_x, bob_y)
             scroll_buffer.render(view_surface)
             # testing sprites
-            bob_x += scroll_x
-            sprite_coord = scroll_buffer.map_to_view_coord((cart.Map.section_height / 2 * cart.TileMap.tile_width + bob_x, cart.Map.section_height * cart.TileMap.tile_width - 5 * cart.TileMap.tile_width))
+            sprite_coord = scroll_buffer.map_to_view_coord((bob_x, bob_y))
             view_surface.blit(bob, sprite_coord)
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)
@@ -85,6 +100,28 @@ class Renderer:
         self.tile_surface_cache[tile_lookup] = surface
         return surface
       
+        
+class Camera:
+    FOLLOW_CENTER = 0
+    FOLLOW_STATIC = 1
+    FOLLOW_REVEAL = 2
+    
+    def __init__(self, x=0, y=0, follow_mode=0, scroll_buffer=None):
+        self.x = 0
+        self.y = 0
+        self.follow_mode = follow_mode
+        self.scroll_buffer = scroll_buffer
+        
+    def follow(self, x, y):
+        # follow center implementation for now
+        new_x = x - (cart.Map.section_width * cart.TileMap.tile_width) / 2
+        new_y = y - (cart.Map.section_height * cart.TileMap.tile_width) / 2
+        delta_x = new_x - self.x
+        delta_y = new_y - self.y
+        self.x = new_x
+        self.y = new_y
+        self.scroll_buffer.scroll(delta_x, delta_y)
+    
         
 class ScrollBuffer:
     quad_width = cart.Map.section_width * cart.TileMap.tile_width

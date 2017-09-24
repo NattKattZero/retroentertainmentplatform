@@ -26,7 +26,7 @@ class Renderer:
         # testing sprites
         camera = Camera(scroll_buffer=scroll_buffer)
         bob = self.surface_for_tile(0xD, attr=2)
-        game = Game()
+        game = Game(self.cartridge)
         bob_entity = Entity(x=cart.Map.section_width / 2 * cart.TileMap.tile_width, y=cart.Map.section_height / 2 * cart.TileMap.tile_width)
         game.add_entity(bob_entity)
         # -
@@ -61,7 +61,7 @@ class Renderer:
                 elif key == pygame.K_DOWN:
                     bob_entity.y += 5
                 elif key == pygame.K_UP:
-                    bob_entity.y -= 5
+                    bob_entity.y -= 35
             camera.follow(bob_entity.x, bob_entity.y)
             scroll_buffer.render(view_surface)
             # testing sprites
@@ -250,19 +250,25 @@ class Entity:
         self.y = y
         
 class Game:
-    def __init__(self):
+    def __init__(self, cartridge):
         self.entities = set()
+        self.cartridge = cartridge
         
     def add_entity(self, entity):
         self.entities.add(entity)
         
     def remove_entity(self, entity):
         if entity in self.entities:
-            self.entities.remote(entity)
+            self.entities.remove(entity)
     
     def process(self):
         for entity in self.entities:
-            entity.y += 1   
+            new_y = entity.y + 11
+            map_row = math.floor((new_y + cart.TileMap.tile_width) / cart.TileMap.tile_width)
+            map_col = math.floor(entity.x / cart.TileMap.tile_width)
+            tile_number = self.cartridge.map.get_tile(map_row, map_col)
+            if tile_number == 0:
+                entity.y = new_y
     
 
 def main():

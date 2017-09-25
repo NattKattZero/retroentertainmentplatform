@@ -25,14 +25,19 @@ class Renderer:
         scroll_y = 0
         # testing sprites
         camera = Camera(scroll_buffer=scroll_buffer)
-        bob = self.surface_for_tile(0xD, attr=2)
         game = Game(self.cartridge)
-        bob_entity = Entity(x=cart.Map.section_width / 2 * cart.TileMap.tile_width, y=cart.Map.section_height / 2 * cart.TileMap.tile_width)
-        game.add_entity(bob_entity)
+        bob = Entity(
+            x=cart.Map.section_width / 2 * cart.TileMap.tile_width,
+            y=cart.Map.section_height / 2 * cart.TileMap.tile_width,
+            width=2,
+            height=3,
+            tiles=[0xD, 0xE, 0xF, 0x10, 0x11, 0x12],
+            attrs = [2, 2, 2, 2, 2, 2])
+        game.add_entity(bob)
         # -
         is_running = True
         while is_running:
-            game.process()
+            game.advance()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     is_running = False
@@ -55,23 +60,31 @@ class Renderer:
                         pressed_keys.remove(event.key)
             for key in pressed_keys:
                 if key == pygame.K_RIGHT:
-                    bob_entity.x += 5
+                    bob.x += 5
                 elif key == pygame.K_LEFT:
-                    bob_entity.x -= 5
+                    bob.x -= 5
                 elif key == pygame.K_DOWN:
-                    bob_entity.y += 5
+                    bob.y += 5
                 elif key == pygame.K_UP:
-                    bob_entity.y -= 35
-            camera.follow(bob_entity.x, bob_entity.y)
+                    bob.y -= 35
+            camera.follow(bob.x, bob.y)
             scroll_buffer.render(view_surface)
-            # testing sprites
-            sprite_coord = scroll_buffer.map_to_view_coord((bob_entity.x, bob_entity.y))
-            view_surface.blit(bob, sprite_coord)
+            self.render_entities(game, view_surface, scroll_buffer)
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)
             pygame.display.update()
             clock.tick(60)
         pygame.quit()
+
+    def render_entities(self, game, view_surface, scroll_buffer):
+        for entity in game.entities:
+            x, y = scroll_buffer.map_to_view_coord((entity.x, entity.y))
+            for row in range(0, entity.height):
+                for col in range(0, entity.width):
+                    tile_number = entity.tiles[row * entity.width + col]
+                    attr = entity.attrs[row * entity.width + col]
+                    surface = self.surface_for_tile(tile_number, attr=attr)
+                    view_surface.blit(surface, (x + col * cart.TileMap.tile_width, y + row * cart.TileMap.tile_width))
 
     def surface_for_map_tile(self, map_row, map_col):
         tile_number = self.cartridge.map.get_tile(map_row, map_col)
@@ -102,7 +115,7 @@ class Renderer:
                     pix_array[7 - col, row] = color
         self.tile_surface_cache[tile_lookup] = surface
         return surface
-      
+
         
 class Camera:
     FOLLOW_CENTER = 0
@@ -134,7 +147,7 @@ class ScrollBuffer:
         self.renderer = renderer
         self.quadrants = [
             pygame.Surface((cart.Map.section_width * cart.TileMap.tile_width, cart.Map.section_height * cart.TileMap.tile_width))
-            for i in range(0, 4)
+            for _ in range(0, 4)
         ]
         self.quadrants[0].fill((255, 0, 0))
         self.quadrants[1].fill((0, 255, 0))
@@ -226,8 +239,7 @@ class ScrollBuffer:
         map_x, map_y = map_coord
         x, y = self.map_coord
         return (map_x - x, map_y - y)
-        
-        
+       
     def swap_vertical_axis(self):
         top_left, top_right, bottom_left, bottom_right = self.quadrants
         self.quadrants = [top_right, top_left, bottom_right, bottom_left]
@@ -245,10 +257,15 @@ class ScrollBuffer:
         
         
 class Entity:
-    def __init__(self, x=0, y=0):
+    def __init__(self, x=0, y=0, width=0, height=0, tiles=[], attrs=[]):
         self.x = x
         self.y = y
-        
+        self.width = width
+        self.height = height
+        self.tiles = tiles
+        self.attrs = attrs
+
+
 class Game:
     def __init__(self, cartridge):
         self.entities = set()
@@ -261,10 +278,10 @@ class Game:
         if entity in self.entities:
             self.entities.remove(entity)
     
-    def process(self):
+    def advance(self):
         for entity in self.entities:
             new_y = entity.y + 11
-            map_row = math.floor((new_y + cart.TileMap.tile_width) / cart.TileMap.tile_width)
+            map_row = math.floor(new_y / cart.TileMap.tile_width)
             map_col = math.floor(entity.x / cart.TileMap.tile_width)
             tile_number = self.cartridge.map.get_tile(map_row, map_col)
             if tile_number == 0:

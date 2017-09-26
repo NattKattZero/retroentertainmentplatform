@@ -27,10 +27,12 @@ class Renderer:
         camera = Camera(scroll_buffer=scroll_buffer)
         game = Game(self.cartridge)
         bob = Entity(
-            x=cart.Map.section_width / 2 * cart.TileMap.tile_width,
-            y=cart.Map.section_height / 2 * cart.TileMap.tile_width,
-            width=2,
-            height=3,
+            pygame.Rect(
+                cart.Map.section_width / 2 * cart.TileMap.tile_width,
+                cart.Map.section_height / 2 * cart.TileMap.tile_width,
+                2,
+                3
+            ),
             tiles=[0xD, 0xE, 0xF, 0x10, 0x11, 0x12],
             attrs = [2, 2, 2, 2, 2, 2])
         game.add_entity(bob)
@@ -60,14 +62,14 @@ class Renderer:
                         pressed_keys.remove(event.key)
             for key in pressed_keys:
                 if key == pygame.K_RIGHT:
-                    bob.x += 5
+                    bob.rect.move_ip(5, 0)
                 elif key == pygame.K_LEFT:
-                    bob.x -= 5
+                    bob.rect.move_ip(-5, 0)
                 elif key == pygame.K_DOWN:
-                    bob.y += 5
+                    bob.rect.move_ip(0, 5)
                 elif key == pygame.K_UP:
-                    bob.y -= 35
-            camera.follow(bob.x, bob.y)
+                    bob.rect.move_ip(0, -35)
+            camera.follow(bob.rect.left, bob.rect.top)
             scroll_buffer.render(view_surface)
             self.render_entities(game, view_surface, scroll_buffer)
             # may want option for smoothscale
@@ -78,11 +80,11 @@ class Renderer:
 
     def render_entities(self, game, view_surface, scroll_buffer):
         for entity in game.entities:
-            x, y = scroll_buffer.map_to_view_coord((entity.x, entity.y))
-            for row in range(0, entity.height):
-                for col in range(0, entity.width):
-                    tile_number = entity.tiles[row * entity.width + col]
-                    attr = entity.attrs[row * entity.width + col]
+            x, y = scroll_buffer.map_to_view_coord((entity.rect.x, entity.rect.y))
+            for row in range(0, entity.rect.height):
+                for col in range(0, entity.rect.width):
+                    tile_number = entity.tiles[row * entity.rect.width + col]
+                    attr = entity.attrs[row * entity.rect.width + col]
                     surface = self.surface_for_tile(tile_number, attr=attr)
                     view_surface.blit(surface, (x + col * cart.TileMap.tile_width, y + row * cart.TileMap.tile_width))
 
@@ -257,11 +259,8 @@ class ScrollBuffer:
         
         
 class Entity:
-    def __init__(self, x=0, y=0, width=0, height=0, tiles=[], attrs=[]):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+    def __init__(self, rect, tiles=[], attrs=[]):
+        self.rect = rect
         self.tiles = tiles
         self.attrs = attrs
 
@@ -280,12 +279,12 @@ class Game:
     
     def advance(self):
         for entity in self.entities:
-            new_y = entity.y + 11
-            map_row = math.floor(new_y / cart.TileMap.tile_width)
-            map_col = math.floor(entity.x / cart.TileMap.tile_width)
+            new_rect = entity.rect.move(0, 11)
+            map_row = math.floor(new_rect.bottom / cart.TileMap.tile_width)
+            map_col = math.floor(new_rect.x / cart.TileMap.tile_width)
             tile_number = self.cartridge.map.get_tile(map_row, map_col)
             if tile_number == 0:
-                entity.y = new_y
+                entity.rect = new_rect
     
 
 def main():

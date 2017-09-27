@@ -3,7 +3,7 @@ import math
 import pygame
 
 class Cart:
-    def __init__(self):
+    def __init__(self, filepath):
         self.map = None
         self.tile_map = None
         self.palette = [
@@ -37,8 +37,7 @@ class Cart:
             ( 6,  7,  8),
             ( 9, 10, 11)
         ]
-
-    def load(self, filepath):
+        # load the cart file
         with open(filepath, 'rb') as cart_file:
             cart_data = cart_file.read()
             header = cart_data[0:20]
@@ -64,7 +63,6 @@ class Cart:
             self.map.load_attr_map(attr_data)
             mapmap_data = cart_data[mapmap_offset:len(cart_data)]
             self.map.load_mapmap(mapmap_data)
-
 
     def lookup_universal_background_color(self):
         return self.palette[self.background_color]
@@ -175,9 +173,3 @@ class TileMap:
             return self.tiles[idx]
         else:
             raise IndexError
-
-
-def load_cart(filepath):
-    cart = Cart()
-    cart.load(filepath)
-    return cart

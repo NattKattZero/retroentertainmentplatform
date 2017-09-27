@@ -3,7 +3,7 @@
 import sys
 import argparse
 
-import cart
+from cart import Cart
 from renderer import Renderer
 
 def main():
@@ -11,8 +11,8 @@ def main():
     parser.add_argument('cart_file', help='Cartridige file')
     args = parser.parse_args()
     cart_file = args.cart_file
-    cartridge = cart.load_cart(cart_file)
-    renderer = Renderer(cartridge)
+    cart = Cart(cart_file)
+    renderer = Renderer(cart)
     renderer.render()
     return 0
 

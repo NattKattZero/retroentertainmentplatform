@@ -224,10 +224,18 @@ class ScrollBuffer:
                 map_row = quad_row + row
                 if row_range and map_row not in row_range:
                     continue
-                for col in range(0, cart.Map.section_width):
+                for col in range(0, cart.Map.section_width * 2):
                     map_col = quad_col + col
-                    if col_range and map_col not in col_range:
-                        continue
+                    quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(), (col * cart.TileMap.tile_width, row * cart.TileMap.tile_width, cart.TileMap.tile_width, cart.TileMap.tile_width))
+                    tile_surface = self.renderer.surface_for_map_tile(map_row, map_col)
+                    if tile_surface:
+                        quadrant.blit(tile_surface, (col * cart.TileMap.tile_width, row * cart.TileMap.tile_width))
+            for col in range(0, cart.Map.section_width):
+                map_col = quad_col + col
+                if col_range and map_col not in col_range:
+                    continue
+                for row in range(0, cart.Map.section_height * 2):
+                    map_row = quad_row + row
                     quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(), (col * cart.TileMap.tile_width, row * cart.TileMap.tile_width, cart.TileMap.tile_width, cart.TileMap.tile_width))
                     tile_surface = self.renderer.surface_for_map_tile(map_row, map_col)
                     if tile_surface:

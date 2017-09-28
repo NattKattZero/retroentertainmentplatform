@@ -2,6 +2,8 @@ import math
 
 import pygame
 
+import tile
+
 class Cart:
     def __init__(self, filepath):
         self.map = None
@@ -53,7 +55,7 @@ class Cart:
             self.background_palettes[2] = (palette_data[7], palette_data[8], palette_data[9])
             self.background_palettes[3] = (palette_data[10], palette_data[11], palette_data[12])
             tile_data = cart_data[tile_offset:map_offset]
-            self.tile_map = TileMap()
+            self.tile_map = tile.TileMap()
             self.tile_map.load(tile_data)
             map_data = cart_data[map_offset:attr_offset]
             self.map = Map()
@@ -158,27 +160,3 @@ class Map:
             raise IndexError
 
 
-class TileMap:
-    tile_width = 8
-
-    def __init__(self):
-        self.tiles = []
-
-    def load(self, raw_data):
-        self.tiles = []
-        tile_size = TileMap.tile_width * TileMap.tile_width
-        tile_count = math.floor(len(raw_data) / tile_size)
-        for idx_tile in range(0, tile_count):
-            tile_data = raw_data[idx_tile * tile_size:(idx_tile + 1) * tile_size]
-            tile = []
-            for row in range(0, TileMap.tile_width):
-                row_data = tile_data[row * TileMap.tile_width:(row + 1) * TileMap.tile_width]
-                tile_row = [p for p in row_data]
-                tile.append(tile_row)
-            self.tiles.append(tile)
-
-    def __getitem__(self, idx):
-        if idx in range(0, len(self.tiles)):
-            return self.tiles[idx]
-        else:
-            raise IndexError

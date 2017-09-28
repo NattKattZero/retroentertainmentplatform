@@ -5,6 +5,7 @@ import pygame
 import cart
 import game
 import tile
+import map
 
 class Renderer:
     def __init__(self, cartridge):
@@ -16,7 +17,7 @@ class Renderer:
         pygame.init()
         display_surface = pygame.display.set_mode((1024, 768))
         # display_surface = pygame.display.set_mode((1440, 900), pygame.FULLSCREEN)
-        view_surface = pygame.Surface((cart.Map.section_width * tile.TILE_SIZE, cart.Map.section_height * tile.TILE_SIZE))
+        view_surface = pygame.Surface((map.Map.section_width * tile.TILE_SIZE, map.Map.section_height * tile.TILE_SIZE))
         pressed_keys = set()
         scroll_buffer = ScrollBuffer(renderer=self)
         scroll_x = 0
@@ -26,8 +27,8 @@ class Renderer:
         bob_game = game.Game(self.cartridge)
         bob = game.Entity(
             pygame.Rect(
-                cart.Map.section_width / 2 * tile.TILE_SIZE,
-                cart.Map.section_height / 2 * tile.TILE_SIZE,
+                map.Map.section_width / 2 * tile.TILE_SIZE,
+                map.Map.section_height / 2 * tile.TILE_SIZE,
                 2 * tile.TILE_SIZE,
                 3 * tile.TILE_SIZE
             ),
@@ -132,8 +133,8 @@ class Camera:
         
     def follow(self, x, y):
         # follow center implementation for now
-        new_x = x - (cart.Map.section_width * tile.TILE_SIZE) / 2
-        new_y = y - (cart.Map.section_height * tile.TILE_SIZE) / 2
+        new_x = x - (map.Map.section_width * tile.TILE_SIZE) / 2
+        new_y = y - (map.Map.section_height * tile.TILE_SIZE) / 2
         delta_x = new_x - self.x
         delta_y = new_y - self.y
         self.x = new_x
@@ -142,13 +143,13 @@ class Camera:
     
         
 class ScrollBuffer:
-    quad_width = cart.Map.section_width * tile.TILE_SIZE
-    quad_height = cart.Map.section_height * tile.TILE_SIZE
+    quad_width = map.Map.section_width * tile.TILE_SIZE
+    quad_height = map.Map.section_height * tile.TILE_SIZE
     
     def __init__(self, renderer):
         self.renderer = renderer
         self.quadrants = [
-            pygame.Surface((cart.Map.section_width * tile.TILE_SIZE, cart.Map.section_height * tile.TILE_SIZE))
+            pygame.Surface((map.Map.section_width * tile.TILE_SIZE, map.Map.section_height * tile.TILE_SIZE))
             for _ in range(0, 4)
         ]
         self.quadrants[0].fill((255, 0, 0))
@@ -195,11 +196,11 @@ class ScrollBuffer:
         row_range = None
         col_range = None
         if delta_x > 0:
-            col_range = range(math.floor(x / tile.TILE_SIZE) + cart.Map.section_width - 1, math.ceil(x / tile.TILE_SIZE) + cart.Map.section_width + n_cols_redraw)
+            col_range = range(math.floor(x / tile.TILE_SIZE) + map.Map.section_width - 1, math.ceil(x / tile.TILE_SIZE) + map.Map.section_width + n_cols_redraw)
         elif delta_x < 0:
             col_range = range(math.floor(x / tile.TILE_SIZE) - n_cols_redraw - 1, math.ceil(x / tile.TILE_SIZE))
         if delta_y > 0:
-            row_range = range(math.floor(y / tile.TILE_SIZE) + cart.Map.section_height - 1, math.ceil(y / tile.TILE_SIZE) + cart.Map.section_height + n_rows_redraw)
+            row_range = range(math.floor(y / tile.TILE_SIZE) + map.Map.section_height - 1, math.ceil(y / tile.TILE_SIZE) + map.Map.section_height + n_rows_redraw)
         elif delta_y < 0:
             row_range = range(math.floor(y / tile.TILE_SIZE) - n_rows_redraw - 1, math.ceil(y / tile.TILE_SIZE))
         self.redraw(row_range=row_range, col_range=col_range)
@@ -215,29 +216,29 @@ class ScrollBuffer:
                 quad_col = start_col
                 quad_row = start_row
             elif i == 1:  # top right
-                quad_col = start_col + cart.Map.section_width
+                quad_col = start_col + map.Map.section_width
                 quad_row = start_row
             elif i == 2:  # bottom left
                 quad_col = start_col
-                quad_row = start_row + cart.Map.section_height
+                quad_row = start_row + map.Map.section_height
             else:  #  bottom right
-                quad_col = start_col + cart.Map.section_width
-                quad_row = start_row + cart.Map.section_height
-            for row in range(0, cart.Map.section_height):
+                quad_col = start_col + map.Map.section_width
+                quad_row = start_row + map.Map.section_height
+            for row in range(0, map.Map.section_height):
                 map_row = quad_row + row
                 if row_range and map_row not in row_range:
                     continue
-                for col in range(0, cart.Map.section_width * 2):
+                for col in range(0, map.Map.section_width * 2):
                     map_col = quad_col + col
                     quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(), (col * tile.TILE_SIZE, row * tile.TILE_SIZE, tile.TILE_SIZE, tile.TILE_SIZE))
                     tile_surface = self.renderer.surface_for_map_tile(map_row, map_col)
                     if tile_surface:
                         quadrant.blit(tile_surface, (col * tile.TILE_SIZE, row * tile.TILE_SIZE))
-            for col in range(0, cart.Map.section_width):
+            for col in range(0, map.Map.section_width):
                 map_col = quad_col + col
                 if col_range and map_col not in col_range:
                     continue
-                for row in range(0, cart.Map.section_height * 2):
+                for row in range(0, map.Map.section_height * 2):
                     map_row = quad_row + row
                     quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(), (col * tile.TILE_SIZE, row * tile.TILE_SIZE, tile.TILE_SIZE, tile.TILE_SIZE))
                     tile_surface = self.renderer.surface_for_map_tile(map_row, map_col)

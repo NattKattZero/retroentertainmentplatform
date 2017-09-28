@@ -101,7 +101,7 @@ class Renderer:
             return self.tile_surface_cache[tile_lookup]
         transform = (attr >> 4) & 0xF
         palette = attr & 0xF
-        tile_data = self.cartridge.tile_map[tile_number - 1]
+        tile_data = self.cartridge.tile_catalog[tile_number - 1]
         surface = pygame.Surface((tile.TILE_SIZE, tile.TILE_SIZE))
         pix_array = pygame.PixelArray(surface)
         for row in range(0, tile.TILE_SIZE):

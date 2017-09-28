@@ -2,7 +2,7 @@ import math
 
 TILE_SIZE = 8
 
-class TileMap:
+class TileCatalog:
     def __init__(self):
         self.tiles = []
 

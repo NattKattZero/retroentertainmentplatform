@@ -34,8 +34,6 @@ class Game:
             tiles = self.cartridge.map.get_tiles_in_area(
                 row_range=range(start_row, end_row), col_range=range(start_col, end_col)
             )
-            print(tiles)
-            print('---')
             empty_space = True
             for tile_row in tiles:
                 for tile_number in tile_row:

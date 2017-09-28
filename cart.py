@@ -7,7 +7,7 @@ import tile
 class Cart:
     def __init__(self, filepath):
         self.map = None
-        self.tile_map = None
+        self.tile_catalog = None
         self.palette = [
             ( 84,  84,  84),  (  0,  30, 116),  (  8,  16, 144),
             ( 48,   0, 136),  ( 68,   0, 100),  ( 92,   0,  48),
@@ -55,8 +55,8 @@ class Cart:
             self.background_palettes[2] = (palette_data[7], palette_data[8], palette_data[9])
             self.background_palettes[3] = (palette_data[10], palette_data[11], palette_data[12])
             tile_data = cart_data[tile_offset:map_offset]
-            self.tile_map = tile.TileMap()
-            self.tile_map.load(tile_data)
+            self.tile_catalog = tile.TileCatalog()
+            self.tile_catalog.load(tile_data)
             map_data = cart_data[map_offset:attr_offset]
             self.map = Map()
             self.map.load(map_data)

@@ -46,7 +46,6 @@ class Cart:
             map_offset = int.from_bytes(header[8:12], byteorder='big')
             attr_offset = int.from_bytes(header[12:16], byteorder='big')
             mapmap_offset = int.from_bytes(header[16:20], byteorder='big')
-            print(f'palette: {palette_offset}, tile: {tile_offset}, map: {map_offset}, attr: {attr_offset}, mapmap: {mapmap_offset}')
             palette_data = cart_data[palette_offset:tile_offset]
             self.background_color = palette_data[0]
             self.background_palettes[0] = (palette_data[1], palette_data[2], palette_data[3])
@@ -141,6 +140,16 @@ class Map:
         attr_col = col % Map.section_width
         section = self.attr_sections[idx_section]
         return section[attr_row][attr_col]
+
+    def get_tiles_in_area(self, row_range, col_range):
+        tiles = []
+        for row in row_range:
+            tile_col = []
+            for col in col_range:
+                tile = self.get_tile(row, col)
+                tile_col.append(tile)
+            tiles.append(tile_col)
+        return tiles
 
     def __getitem__(self, idx):
         if idx in range(0, len(self.sections)):

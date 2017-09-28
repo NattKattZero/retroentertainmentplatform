@@ -27,9 +27,11 @@ class Renderer:
             pygame.Rect(
                 cart.Map.section_width / 2 * cart.TileMap.tile_width,
                 cart.Map.section_height / 2 * cart.TileMap.tile_width,
-                2,
-                3
+                2 * cart.TileMap.tile_width,
+                3 * cart.TileMap.tile_width
             ),
+            tile_width = 2,
+            tile_height = 3,
             tiles=[0xD, 0xE, 0xF, 0x10, 0x11, 0x12],
             attrs = [2, 2, 2, 2, 2, 2])
         bob_game.add_entity(bob)
@@ -78,10 +80,10 @@ class Renderer:
     def render_entities(self, bob_game, view_surface, scroll_buffer):
         for entity in bob_game.entities:
             x, y = scroll_buffer.map_to_view_coord((entity.rect.x, entity.rect.y))
-            for row in range(0, entity.rect.height):
-                for col in range(0, entity.rect.width):
-                    tile_number = entity.tiles[row * entity.rect.width + col]
-                    attr = entity.attrs[row * entity.rect.width + col]
+            for row in range(0, entity.tile_height):
+                for col in range(0, entity.tile_width):
+                    tile_number = entity.tiles[row * entity.tile_width + col]
+                    attr = entity.attrs[row * entity.tile_width + col]
                     surface = self.surface_for_tile(tile_number, attr=attr)
                     view_surface.blit(surface, (x + col * cart.TileMap.tile_width, y + row * cart.TileMap.tile_width))
 

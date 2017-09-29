@@ -4,12 +4,9 @@ import cart
 import tile
 
 class Entity:
-    def __init__(self, rect, tiles=[], attrs=[], tile_width=0, tile_height=0):
+    def __init__(self, rect, tiled_area):
         self.rect = rect
-        self.tiles = tiles
-        self.attrs = attrs
-        self.tile_width = tile_width
-        self.tile_height = tile_height
+        self.tiled_area = tiled_area
 
 
 class Game:

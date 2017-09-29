@@ -85,3 +85,11 @@ class Map:
             return self.sections[idx]
         else:
             raise IndexError
+
+
+class TiledArea:
+    def __init__(self, tile_data=[], attr_data=[], width=0, height=0):
+        self.width = width
+        self.height = height
+        self.tiles = [list(zip(tile_data[x:x+width], attr_data[x:x+width])) for x in range(0, len(tile_data), width)]
+        print(self.tiles)

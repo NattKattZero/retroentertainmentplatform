@@ -32,10 +32,14 @@ class Renderer:
                 2 * tile.TILE_SIZE,
                 3 * tile.TILE_SIZE
             ),
-            tile_width = 2,
-            tile_height = 3,
-            tiles=[0xD, 0xE, 0xF, 0x10, 0x11, 0x12],
-            attrs = [2, 2, 2, 2, 2, 2])
+            tiled_area=map.TiledArea(
+                tile_data=[0xD, 0xE, 0xF, 0x10, 0x11, 0x12],
+                attr_data=[2, 2, 2, 2, 2, 2],
+                width=2,
+                height=3
+            )
+        )
+
         bob_game.add_entity(bob)
         # -
         is_running = True
@@ -72,20 +76,19 @@ class Renderer:
                     bob.rect.move_ip(0, -35)
             camera.follow(bob.rect.left, bob.rect.top)
             scroll_buffer.render(view_surface)
-            self.render_entities(bob_game, view_surface, scroll_buffer)
+            self.render_entities(bob_game.entities, view_surface, scroll_buffer)
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)
             pygame.display.update()
             clock.tick(60)
         pygame.quit()
 
-    def render_entities(self, bob_game, view_surface, scroll_buffer):
-        for entity in bob_game.entities:
+    def render_entities(self, entities, view_surface, scroll_buffer):
+        for entity in entities:
             x, y = scroll_buffer.map_to_view_coord((entity.rect.x, entity.rect.y))
-            for row in range(0, entity.tile_height):
-                for col in range(0, entity.tile_width):
-                    tile_number = entity.tiles[row * entity.tile_width + col]
-                    attr = entity.attrs[row * entity.tile_width + col]
+            for row, tile_row in enumerate(entity.tiled_area.tiles):
+                for col, tile_and_attr in enumerate(tile_row):
+                    tile_number, attr = tile_and_attr
                     surface = self.surface_for_tile(tile_number, attr=attr)
                     view_surface.blit(surface, (x + col * tile.TILE_SIZE, y + row * tile.TILE_SIZE))
 

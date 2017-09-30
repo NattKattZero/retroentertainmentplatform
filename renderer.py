@@ -23,11 +23,11 @@ class Renderer:
         scroll_x = 0
         scroll_y = 0
         # testing sprites
-        camera = Camera(scroll_buffer=scroll_buffer)
+        camera = Camera(scroll_buffer=scroll_buffer, follow_mode=Camera.FOLLOW_LEAD)
         bob_game = game.Game(self.cartridge)
         bob = game.Entity(
             pygame.Rect(
-                map.Map.section_width / 2 * tile.TILE_SIZE,
+                map.Map.section_width / 8 * tile.TILE_SIZE,
                 map.Map.section_height / 2 * tile.TILE_SIZE,
                 2 * tile.TILE_SIZE,
                 3 * tile.TILE_SIZE
@@ -126,7 +126,7 @@ class Renderer:
 class Camera:
     FOLLOW_CENTER = 0
     FOLLOW_STATIC = 1
-    FOLLOW_REVEAL = 2
+    FOLLOW_LEAD = 2
     
     def __init__(self, x=0, y=0, follow_mode=0, scroll_buffer=None):
         self.x = 0
@@ -135,14 +135,20 @@ class Camera:
         self.scroll_buffer = scroll_buffer
         
     def follow(self, x, y):
-        # follow center implementation for now
-        new_x = x - (map.Map.section_width * tile.TILE_SIZE) / 2
-        new_y = y - (map.Map.section_height * tile.TILE_SIZE) / 2
-        delta_x = new_x - self.x
-        delta_y = new_y - self.y
-        self.x = new_x
-        self.y = new_y
-        self.scroll_buffer.scroll(delta_x, delta_y)
+        if self.follow_mode == Camera.FOLLOW_CENTER:
+            new_x = x - (map.Map.section_width * tile.TILE_SIZE) / 2
+            new_y = y - (map.Map.section_height * tile.TILE_SIZE) / 2
+            delta_x = new_x - self.x
+            delta_y = new_y - self.y
+            self.x = new_x
+            self.y = new_y
+            self.scroll_buffer.scroll(delta_x, delta_y)
+        elif self.follow_mode == Camera.FOLLOW_LEAD:
+            view_x, view_y = self.scroll_buffer.map_to_view_coord((x, y))
+            if view_x < (map.Map.section_width * tile.TILE_SIZE) * ( 1 / 3 ) or view_x > (map.Map.section_width * tile.TILE_SIZE) * ( 2 / 3 ):
+                delta_x = x - self.x
+                self.x = x - 30
+                self.scroll_buffer.scroll(delta_x - 30, 0)
     
         
 class ScrollBuffer:

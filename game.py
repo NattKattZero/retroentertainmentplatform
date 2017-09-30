@@ -26,8 +26,8 @@ class Game:
     def advance(self):
         for entity in self.entities:
             new_rect = entity.rect.move(0, 11)
-            start_row = math.floor(new_rect.y / tile.TILE_SIZE)
-            start_col = math.floor(new_rect.x / tile.TILE_SIZE)
+            start_row = math.ceil(new_rect.y / tile.TILE_SIZE)
+            start_col = math.ceil(new_rect.x / tile.TILE_SIZE)
             end_row = start_row + math.ceil(new_rect.height / tile.TILE_SIZE)
             end_col = start_col + math.ceil(new_rect.width / tile.TILE_SIZE)
             tiled_area = self.cartridge.map.get_tiles_in_area(

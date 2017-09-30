@@ -1,5 +1,8 @@
 import math
 
+import pygame
+
+import tile
 
 class Map:
     section_width = 32
@@ -71,14 +74,16 @@ class Map:
         return section[attr_row][attr_col]
 
     def get_tiles_in_area(self, row_range, col_range):
-        tiles = []
+        tile_data = []
+        attr_data = []
         for row in row_range:
-            tile_col = []
             for col in col_range:
-                tile = self.get_tile(row, col)
-                tile_col.append(tile)
-            tiles.append(tile_col)
-        return tiles
+                tile_number = self.get_tile(row, col)
+                tile_data.append(tile_number)
+                attr = self.get_attr(row, col)
+                attr_data.append(attr)
+        tiled_area = TiledArea(tile_data=tile_data, attr_data=attr_data, width=len(col_range), height=len(row_range))
+        return tiled_area
 
     def __getitem__(self, idx):
         if idx in range(0, len(self.sections)):
@@ -92,4 +97,30 @@ class TiledArea:
         self.width = width
         self.height = height
         self.tiles = [list(zip(tile_data[x:x+width], attr_data[x:x+width])) for x in range(0, len(tile_data), width)]
-        print(self.tiles)
+        self.bounds = pygame.Rect(0, 0, self.width * tile.TILE_SIZE, self.height * tile.TILE_SIZE)
+        self.hitbox = self.calculate_hitbox()
+
+    def calculate_hitbox(self):
+        end_row = end_col = 0
+        start_row = self.height
+        start_col = self.width
+        for row, row_data in enumerate(self.tiles):
+            for col, tile_and_attr in enumerate(row_data):
+                tile_number, attr = tile_and_attr
+                if tile_number != 0:
+                    if row < start_row:
+                        start_row = row
+                    if row > end_row:
+                        end_row = row
+                    if col < start_col:
+                        start_col = col
+                    if col > end_col:
+                        end_col = col
+        if start_col > end_col or start_row > end_row:
+            start_col = end_col = start_row = end_row = 0
+        return pygame.Rect(
+            start_col * tile.TILE_SIZE,
+            start_row * tile.TILE_SIZE,
+            (end_col - start_col) * tile.TILE_SIZE,
+            (end_row - start_row) * tile.TILE_SIZE
+        )

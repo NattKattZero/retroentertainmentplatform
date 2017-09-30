@@ -1,5 +1,7 @@
 import math
 
+import pygame
+
 import cart
 import tile
 
@@ -28,14 +30,17 @@ class Game:
             start_col = math.floor(new_rect.x / tile.TILE_SIZE)
             end_row = start_row + math.ceil(new_rect.height / tile.TILE_SIZE)
             end_col = start_col + math.ceil(new_rect.width / tile.TILE_SIZE)
-            tiles = self.cartridge.map.get_tiles_in_area(
+            tiled_area = self.cartridge.map.get_tiles_in_area(
                 row_range=range(start_row, end_row), col_range=range(start_col, end_col)
             )
-            empty_space = True
-            for tile_row in tiles:
-                for tile_number in tile_row:
-                    if tile_number != 0:
-                        empty_space = False
-                        break
-            if empty_space:
+            tiled_area_frame = tiled_area.bounds.move(start_col * tile.TILE_SIZE, start_row * tile.TILE_SIZE)
+            tiled_area_hitbox = pygame.Rect(
+                tiled_area_frame.x + tiled_area.hitbox.x,
+                tiled_area_frame.y + tiled_area.hitbox.y,
+                tiled_area.hitbox.width,
+                tiled_area.hitbox.height
+            )
+            if not new_rect.colliderect(tiled_area_hitbox):
                 entity.rect = new_rect
+            else:
+                new_rect.top = tiled_area_hitbox.top

@@ -27,10 +27,12 @@ class Game:
     
     def advance(self):
         for entity in self.entities:
+            x, y = entity.vector.get_components()
+            new_rect = entity.rect.move(x, y)
+            entity.rect = new_rect
+            continue
             for delta_y in range(0, 11):
                 new_rect = entity.rect.move(0, delta_y)
-                # x, y = entity.vector.get_components()
-                # new_rect = entity.rect.move(x, y)
                 start_row = math.ceil(new_rect.y / tile.TILE_SIZE)
                 start_col = math.ceil(new_rect.x / tile.TILE_SIZE)
                 end_row = start_row + math.ceil(new_rect.height / tile.TILE_SIZE)

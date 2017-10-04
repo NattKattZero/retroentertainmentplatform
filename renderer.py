@@ -6,6 +6,7 @@ import cart
 import game
 import tile
 import map
+import physics
 
 class Renderer:
     def __init__(self, cartridge):
@@ -61,6 +62,10 @@ class Renderer:
                     elif event.key == pygame.K_DOWN:
                         if pygame.K_UP in pressed_keys:
                             pressed_keys.remove(pygame.K_UP)
+                    elif event.key == pygame.K_SPACE:
+                        bob.vector.angle = 90.0
+                        bob.vector.magnitude = 2.0
+                        print('jump!')
                     pressed_keys.add(event.key)
                 elif event.type == pygame.KEYUP:
                     if event.key in pressed_keys:
@@ -74,8 +79,6 @@ class Renderer:
                     bob.rect.move_ip(0, 5)
                 elif key == pygame.K_UP:
                     bob.rect.move_ip(0, -35)
-                    # bob.vector.angle = 45.0
-                    # bob.vector.magnitude = 1.0
             camera.follow(bob.rect.left, bob.rect.top)
             scroll_buffer.render(view_surface)
             self.render_entities(bob_game.entities, view_surface, scroll_buffer)

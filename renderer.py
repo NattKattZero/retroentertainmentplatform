@@ -23,7 +23,7 @@ class Renderer:
         scroll_x = 0
         scroll_y = 0
         # testing sprites
-        camera = Camera(scroll_buffer=scroll_buffer, follow_mode=Camera.FOLLOW_LEAD)
+        camera = Camera(scroll_buffer=scroll_buffer, follow_mode=Camera.FOLLOW_CENTER)
         bob_game = game.Game(self.cartridge)
         bob = game.Entity(
             pygame.Rect(
@@ -74,6 +74,8 @@ class Renderer:
                     bob.rect.move_ip(0, 5)
                 elif key == pygame.K_UP:
                     bob.rect.move_ip(0, -35)
+                    # bob.vector.angle = 45.0
+                    # bob.vector.magnitude = 1.0
             camera.follow(bob.rect.left, bob.rect.top)
             scroll_buffer.render(view_surface)
             self.render_entities(bob_game.entities, view_surface, scroll_buffer)

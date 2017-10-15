@@ -64,7 +64,7 @@ class Renderer:
                             pressed_keys.remove(pygame.K_UP)
                     elif event.key == pygame.K_SPACE:
                         bob.vector.angle = 90.0
-                        bob.vector.magnitude = 2.0
+                        bob.vector.magnitude = 10.0
                         print('jump!')
                     pressed_keys.add(event.key)
                 elif event.type == pygame.KEYUP:

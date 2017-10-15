@@ -27,12 +27,11 @@ class Game:
     
     def advance(self):
         for entity in self.entities:
-            x, y = entity.vector.get_components()
-            new_rect = entity.rect.move(x, y)
-            entity.rect = new_rect
-            continue
-            for delta_y in range(0, 11):
-                new_rect = entity.rect.move(0, delta_y)
+            for _ in range(0, 11):
+                new_vector = entity.vector.add(physics.Vector(angle=270.0, magnitude=1.0))
+                x, y = new_vector.get_components()
+                print(f'moving x:{x}, y:{y}')
+                new_rect = entity.rect.move(x, y)
                 start_row = math.ceil(new_rect.y / tile.TILE_SIZE)
                 start_col = math.ceil(new_rect.x / tile.TILE_SIZE)
                 end_row = start_row + math.ceil(new_rect.height / tile.TILE_SIZE)
@@ -54,3 +53,6 @@ class Game:
                 )
                 if not new_rect.colliderect(tiled_area_hitbox):
                     entity.rect = new_rect
+                    entity.vector = new_vector
+                else:
+                    entity.vector = entity.vector.add(physics.Vector(angle=90.0, magnitude=y))

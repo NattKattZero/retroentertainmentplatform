@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import math
 
 import pygame
 
@@ -77,24 +78,53 @@ class Guy2():
         self.y += delta_y
 
 
+
+
+
+class Vector:
+    def __init__(self, x=0, y=0):
+        self.x = x
+        self.y = y
+
+    def add(self, vector2):
+        self.x += vector2.x
+        self.y += vector2.y
+
+
+class Entity:
+    def __init__(self, x=0, y=0, width=10, height=10):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.vector = Vector()
+
+
 def main():
     clock = pygame.time.Clock()
     pygame.init()
     display_surface = pygame.display.set_mode((1024, 768))
     guy_surface = pygame.Surface((10, 10))
     guy_surface.fill((255, 0, 0))
-    guys = [Guy(x=500, y=10 + i * 20, speed=-(i+1)) for i in range(0, 10)]
-    # guys = [Guy2(x=0, y=10 + i * 20, speed=i*0.1) for i in range(0, 10)]
+    guy = Entity(x=math.floor(1024 / 2 - 5), y=math.floor(768 / 2 - 5), width=10, height=10)
     is_running = True
     while is_running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 is_running = False
+            elif event.type == pygame.KEYDOWN:
+                accel = Vector()
+                if event.key == pygame.K_UP:
+                    accel.y = -1
+                if event.key == pygame.K_DOWN:
+                    accel.y = 1
+                if event.key == pygame.K_LEFT:
+                    accel.x = -1
+                if event.key == pygame.K_RIGHT:
+                    accel.x = 1
+                guy.vector.add(accel)
         display_surface.fill((0, 0, 0))
-        for guy in guys:
-            display_surface.blit(guy_surface, (guy.x, guy.y))
-            guy.move(guy.speed, 0)
+        display_surface.blit(guy_surface, (guy.rect.x, guy.rect.y))
         pygame.display.update()
+        # apply vector
+        guy.rect.move_ip(guy.vector.x, guy.vector.y)
         clock.tick(60)
     pygame.quit()
     return 0

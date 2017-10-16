@@ -45,7 +45,6 @@ class Renderer:
         # -
         is_running = True
         while is_running:
-            bob_game.advance()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     is_running = False
@@ -63,22 +62,21 @@ class Renderer:
                         if pygame.K_UP in pressed_keys:
                             pressed_keys.remove(pygame.K_UP)
                     elif event.key == pygame.K_SPACE:
-                        bob.vector.angle = 90.0
-                        bob.vector.magnitude = 10.0
-                        print('jump!')
+                        bob.vector = bob.vector.add(physics.Vector(x=0, y=-15))
                     pressed_keys.add(event.key)
                 elif event.type == pygame.KEYUP:
                     if event.key in pressed_keys:
                         pressed_keys.remove(event.key)
             for key in pressed_keys:
                 if key == pygame.K_RIGHT:
-                    bob.rect.move_ip(5, 0)
+                    bob.vector = bob.vector.add(physics.Vector(x=1, y=0))
                 elif key == pygame.K_LEFT:
-                    bob.rect.move_ip(-5, 0)
+                    bob.vector = bob.vector.add(physics.Vector(x=-1, y=0))
                 elif key == pygame.K_DOWN:
-                    bob.rect.move_ip(0, 5)
+                    bob.vector = bob.vector.add(physics.Vector(x=0, y=1))
                 elif key == pygame.K_UP:
-                    bob.rect.move_ip(0, -35)
+                    bob.vector = bob.vector.add(physics.Vector(x=0, y=-1))
+            bob_game.advance()
             camera.follow(bob.rect.left, bob.rect.top)
             scroll_buffer.render(view_surface)
             self.render_entities(bob_game.entities, view_surface, scroll_buffer)

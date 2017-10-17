@@ -32,24 +32,29 @@ class Game:
     def advance(self):
         for entity in self.entities:
             # add gravity vector
-            entity.vector = entity.vector.add(physics.Vector(x=0, y=1))
-            # test new y for collision
-            new_rect = entity.rect.move(0, entity.vector.y)  
-            background_hitbox = self.get_background_hitbox(new_rect)
-            if (background_hitbox.width > 0 and background_hitbox.height > 0) and new_rect.colliderect(background_hitbox):
+            entity.vector = entity.vector.add(physics.Vector(x=0, y=3))
+            v_x = 1 if entity.vector.x >= 0 else -1
+            v_y = 1 if entity.vector.y >= 0 else -1
+            for i in range(0, max(abs(entity.vector.x), abs(entity.vector.y))):
                 delta_y = 0
-            else:
-                delta_y = entity.vector.y
-            # test new x for collission
-            new_rect = entity.rect.move(entity.vector.x, 0)  
-            background_hitbox = self.get_background_hitbox(new_rect)
-            if (background_hitbox.width > 0 and background_hitbox.height > 0) and new_rect.colliderect(background_hitbox):
+                if i < abs(entity.vector.y):
+                    # test new y for collision
+                    new_rect = entity.rect.move(0, v_y)  
+                    if not self.collides_with_background(new_rect):
+                        delta_y = v_y
                 delta_x = 0
-            else:
-                delta_x = entity.vector.x
-            entity.rect.move_ip(delta_x, delta_y)
-            entity.vector.x = delta_x
-            entity.vector.y = delta_y
+                if i < abs(entity.vector.x):
+                    # test new x for collission
+                    new_rect = entity.rect.move(v_x, 0)  
+                    if not self.collides_with_background(new_rect):
+                        delta_x = v_x
+                entity.rect.move_ip(delta_x, delta_y)
+                if delta_x == 0:
+                    entity.vector.x = 0
+                    v_x = 0
+                if delta_y == 0:
+                    entity.vector.y = 0
+                    v_y = 0
 
 
     def get_background_hitbox(self, rect):
@@ -63,8 +68,8 @@ class Game:
         tiled_area_frame = pygame.Rect(
             start_col * tile.TILE_SIZE,
             start_row * tile.TILE_SIZE,
-            tiled_area.bounds.width,
-            tiled_area.bounds.height
+            end_col * tile.TILE_SIZE,
+            end_row * tile.TILE_SIZE
         )
         tiled_area_hitbox = pygame.Rect(
             tiled_area_frame.x + tiled_area.hitbox.x,
@@ -72,4 +77,16 @@ class Game:
             tiled_area.hitbox.width,
             tiled_area.hitbox.height
         )
+        if tiled_area_hitbox.width == 0 or tiled_area_hitbox.height == 0:
+            return None
         return tiled_area_hitbox
+
+    def collides_with_background(self, rect):
+        start_row = math.floor(rect.y / tile.TILE_SIZE)
+        start_col = math.floor(rect.x / tile.TILE_SIZE)
+        end_row = start_row + math.floor(rect.height / tile.TILE_SIZE) + 1
+        end_col = start_col + math.floor(rect.width / tile.TILE_SIZE) + 1
+        tiled_area = self.cartridge.map.get_tiles_in_area(
+            row_range=range(start_row, end_row), col_range=range(start_col, end_col)
+        )
+        return not tiled_area.is_empty()

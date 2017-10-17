@@ -24,7 +24,7 @@ class Renderer:
         scroll_x = 0
         scroll_y = 0
         # testing sprites
-        camera = Camera(scroll_buffer=scroll_buffer, follow_mode=Camera.FOLLOW_CENTER)
+        camera = Camera(scroll_buffer=scroll_buffer, follow_mode=Camera.FOLLOW_LEAD)
         bob_game = game.Game(self.cartridge)
         bob = game.Entity(
             pygame.Rect(
@@ -62,20 +62,20 @@ class Renderer:
                         if pygame.K_UP in pressed_keys:
                             pressed_keys.remove(pygame.K_UP)
                     elif event.key == pygame.K_SPACE:
-                        bob.vector = bob.vector.add(physics.Vector(x=0, y=-15))
+                        bob.vector = bob.vector.add(physics.Vector(x=0, y=-25))
                     pressed_keys.add(event.key)
                 elif event.type == pygame.KEYUP:
                     if event.key in pressed_keys:
                         pressed_keys.remove(event.key)
             for key in pressed_keys:
                 if key == pygame.K_RIGHT:
-                    bob.vector = bob.vector.add(physics.Vector(x=1, y=0))
+                    bob.vector = bob.vector.add(physics.Vector(x=3, y=0))
                 elif key == pygame.K_LEFT:
-                    bob.vector = bob.vector.add(physics.Vector(x=-1, y=0))
+                    bob.vector = bob.vector.add(physics.Vector(x=-3, y=0))
                 elif key == pygame.K_DOWN:
-                    bob.vector = bob.vector.add(physics.Vector(x=0, y=1))
+                    bob.vector = bob.vector.add(physics.Vector(x=0, y=3))
                 elif key == pygame.K_UP:
-                    bob.vector = bob.vector.add(physics.Vector(x=0, y=-1))
+                    bob.vector = bob.vector.add(physics.Vector(x=0, y=-3))
             bob_game.advance()
             camera.follow(bob.rect.left, bob.rect.top)
             scroll_buffer.render(view_surface)

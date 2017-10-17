@@ -100,6 +100,13 @@ class TiledArea:
         self.bounds = pygame.Rect(0, 0, self.width * tile.TILE_SIZE, self.height * tile.TILE_SIZE)
         self.hitbox = self.calculate_hitbox()
 
+    def is_empty(self):
+        for row_data in self.tiles:
+            for tile_number, attr in row_data:
+                if tile_number > 0:
+                    return False
+        return True
+
     def calculate_hitbox(self):
         end_row = end_col = 0
         start_row = self.height

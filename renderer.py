@@ -24,7 +24,7 @@ class Renderer:
         scroll_x = 0
         scroll_y = 0
         # testing sprites
-        camera = Camera(scroll_buffer=scroll_buffer, follow_mode=Camera.FOLLOW_LEAD)
+        camera = Camera(scroll_buffer=scroll_buffer, follow_mode=Camera.FOLLOW_CENTER)
         bob_game = game.Game(self.cartridge)
         bob = game.Entity(
             pygame.Rect(
@@ -103,6 +103,8 @@ class Renderer:
         return self.surface_for_tile(tile_number, attr)
 
     def surface_for_tile(self, tile_number, attr=0):
+        if tile_number <= 0:
+            return None
         tile_lookup = (tile_number, attr)
         if tile_lookup in self.tile_surface_cache:
             return self.tile_surface_cache[tile_lookup]
@@ -152,12 +154,109 @@ class Camera:
                 delta_x = x - self.x
                 self.x = x - 30
                 self.scroll_buffer.scroll(delta_x - 30, 0)
-    
+
+class Background:
+    width = map.Map.section_width * 2
+    height = map.Map.section_height * 2
+
+    def __init__(self, game_map):
+        self.map = game_map
+        # fill background store with blank tiles and attrs
+        self.rows = [[(0, 0) for _ in range(0, Background.width)] for _ in range(0, Background.height)]
+        self.offset = (0, 0)
+        self.map_offset = (0, 0)
+
+    def translate_col_row(self, col, row):
+        if row not in range(0, map.Map.section_height) or col not in range(0, map.Map.section_width):
+            raise IndexError
+        offset_col, offset_row = self.offset
+        return (
+            clamp(offset_col + col, min_n=0, max_n=Background.width),
+            clamp(offset_row + row, min_n=0, max_n=Background.height)
+        )
+
+    def get_tile_and_attr(self, col, row):
+        try:
+            translated_col, translated_row = self.translate_col_row(col, row)
+            row_data = self.rows[translated_row]
+            return row_data[translated_col]
+        except IndexError:
+            return (0, 0)
+        return (0, 0)
+
+    def set_buffered_tile_and_attr(self, col, row, tile_and_attr):
+        if row not in range(0, Background.height) or col not in range(0, Background.width):
+            return
+        row_data = self.rows[row]
+        row_data[col] = tile_and_attr
+
+    def scroll(self, delta_col, delta_row):
+        self.scroll_row(delta_row)
+        self.scroll_col(delta_col)
+        col, row = self.offset
+        self.offset = (
+            clamp(col + delta_col, min_n=0, max_n=Background.width),
+            clamp(row + delta_row, min_n=0, max_n=Background.height)
+        )
+        map_col, map_row = self.map_offset
+        self.map_offset = (map_col + delta_col, map_row + delta_row)
+
+    def scroll_col(self, delta_col):
+        col, row = self.offset
+        map_col, map_row = self.map_offset
+        # row_range spans the whole height of the background buffer
+        row_range = range(0, Background.height)
+        map_row_range = range(map_row - row, (map_row - row) + Background.height)
+        if delta_col > 0:
+            col_range = range(
+                clamp(col + map.Map.section_width + 1, min_n=0, max_n = Background.height),
+                clamp(col + map.Map.section_width + 1 + delta_col, min_n=0, max_n = Background.height)
+            )
+            map_col_range = range(map_col + map.Map.section_width + 1, map.Map.section_width + 1 + delta_col)
+        else:
+            col_range = range(
+                clamp(col + delta_col, min_n=0, max_n = Background.height),
+                clamp(col - 1, min_n=0, max_n = Background.height)
+            )
+            map_col_range = range(map_col + delta_col, map_col - 1)
+        self.load_tiles(col_range, row_range, map_col_range, map_row_range)
+
+    def scroll_row(self, delta_row):
+        col, row = self.offset
+        map_col, map_row = self.map_offset
+        # col_range spans the whole width of the background buffer
+        col_range = range(0, Background.width)
+        map_col_range = range(map_col - col, (map_col - col) + Background.width)
+        if delta_row > 0:
+            row_range = range(
+                clamp(row + map.Map.section_height + 1, min_n=0, max_n = Background.width),
+                clamp(row + map.Map.section_height + 1 + delta_row, min_n=0, max_n = Background.width)
+            )
+            map_row_range = range(map_row + map.Map.section_height + 1, map.Map.section_height + 1 + delta_row)
+        else:
+            row_range = range(
+                clamp(row + delta_row, min_n=0, max_n = Background.width),
+                clamp(row - 1, min_n=0, max_n = Background.width)
+            )
+            map_row_range = range(map_row + delta_row, map_row - 1)
+        self.load_tiles(col_range, row_range, map_col_range, map_row_range)
         
+    def load_tiles(self, col_range, row_range, map_col_range, map_row_range):
+        if len(map_col_range) <= 0 or len(map_row_range) <= 0:
+            return
+        tiled_area = self.map.get_tiles_in_area(col_range=map_col_range, row_range=map_row_range)
+        for tile_row in range(0, tiled_area.height):
+            tile_row_data = tiled_area.tiles[tile_row]
+            for tile_col in range(0, tiled_area.width):
+                tile_and_attr = tile_row_data[tile_col]
+                self.set_buffered_tile_and_attr(col_range.start + tile_col, row_range.start + tile_row, tile_and_attr)
+        
+
+
 class ScrollBuffer:
     quad_width = map.Map.section_width * tile.TILE_SIZE
     quad_height = map.Map.section_height * tile.TILE_SIZE
-    
+
     def __init__(self, renderer):
         self.renderer = renderer
         self.quadrants = [
@@ -176,6 +275,7 @@ class ScrollBuffer:
             ScrollBuffer.quad_height / 2 + ScrollBuffer.quad_height
         )
         self.map_coord = (0, 0)
+        self.background = Background(renderer.cartridge.map)
         self.redraw()
         
     def scroll(self, delta_x, delta_y):
@@ -215,6 +315,7 @@ class ScrollBuffer:
             row_range = range(math.floor(y / tile.TILE_SIZE) + map.Map.section_height - 1, math.ceil(y / tile.TILE_SIZE) + map.Map.section_height + n_rows_redraw)
         elif delta_y < 0:
             row_range = range(math.floor(y / tile.TILE_SIZE) - n_rows_redraw - 1, math.ceil(y / tile.TILE_SIZE))
+        self.background.scroll(n_cols_redraw, n_rows_redraw)
         self.redraw(row_range=row_range, col_range=col_range)
         
         
@@ -243,9 +344,14 @@ class ScrollBuffer:
                 for col in range(0, map.Map.section_width * 2):
                     map_col = quad_col + col
                     quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(), (col * tile.TILE_SIZE, row * tile.TILE_SIZE, tile.TILE_SIZE, tile.TILE_SIZE))
-                    tile_surface = self.renderer.surface_for_map_tile(map_row, map_col)
+                    # there's no way this will work
+                    tile_number, attr = self.background.get_tile_and_attr(col, row)
+                    tile_surface = self.renderer.surface_for_tile(tile_number, attr=attr)
                     if tile_surface:
                         quadrant.blit(tile_surface, (col * tile.TILE_SIZE, row * tile.TILE_SIZE))
+                    # tile_surface = self.renderer.surface_for_map_tile(map_row, map_col)
+                    # if tile_surface:
+                    #     quadrant.blit(tile_surface, (col * tile.TILE_SIZE, row * tile.TILE_SIZE))
             for col in range(0, map.Map.section_width):
                 map_col = quad_col + col
                 if col_range and map_col not in col_range:
@@ -253,9 +359,14 @@ class ScrollBuffer:
                 for row in range(0, map.Map.section_height * 2):
                     map_row = quad_row + row
                     quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(), (col * tile.TILE_SIZE, row * tile.TILE_SIZE, tile.TILE_SIZE, tile.TILE_SIZE))
-                    tile_surface = self.renderer.surface_for_map_tile(map_row, map_col)
+                    # there's no way this will work
+                    tile_number, attr = self.background.get_tile_and_attr(col, row)
+                    tile_surface = self.renderer.surface_for_tile(tile_number, attr=attr)
                     if tile_surface:
                         quadrant.blit(tile_surface, (col * tile.TILE_SIZE, row * tile.TILE_SIZE))
+                    # tile_surface = self.renderer.surface_for_map_tile(map_row, map_col)
+                    # if tile_surface:
+                    #     quadrant.blit(tile_surface, (col * tile.TILE_SIZE, row * tile.TILE_SIZE))
         
     
     def map_to_view_coord(self, map_coord):
@@ -278,3 +389,14 @@ class ScrollBuffer:
         surface.blit(self.quadrants[2], (0, ScrollBuffer.quad_height - top), area=(left, 0, ScrollBuffer.quad_width - left, bottom))
         surface.blit(self.quadrants[3], (ScrollBuffer.quad_width - left, ScrollBuffer.quad_height - top), area=(0, 0, right, bottom))
     
+
+def clamp(n, min_n, max_n):
+    if n > max_n:
+        while n > max_n:
+            n -= (max_n - min_n)
+        return n
+    elif n < min_n:
+        while n < min_n:
+            n += (max_n - min_n)
+        return n
+    return n

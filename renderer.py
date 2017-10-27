@@ -274,35 +274,71 @@ class ScrollBuffer:
             ScrollBuffer.quad_width / 2 + ScrollBuffer.quad_width,
             ScrollBuffer.quad_height / 2 + ScrollBuffer.quad_height
         )
+        self.offset = (0, 0)
         self.map_coord = (0, 0)
         self.background = Background(renderer.cartridge.map)
-        self.redraw()
+        # self.redraw()
         
     def scroll(self, delta_x, delta_y):
-        x, y = self.map_coord
-        self.map_coord = (x + delta_x, y + delta_y)
+        offset_x, offset_y = self.offset
         left, top, right, bottom = self.view_rect
-        left += delta_x
-        right += delta_x
-        if left >= ScrollBuffer.quad_width:
-            left = left - ScrollBuffer.quad_width
-            right = right - ScrollBuffer.quad_width
-            self.swap_vertical_axis()
-        elif left <= 0:
-            left = left + ScrollBuffer.quad_width
-            right = right + ScrollBuffer.quad_width
-            self.swap_vertical_axis()
-        top += delta_y
-        bottom += delta_y
-        if top >= ScrollBuffer.quad_height:
-            top = top - ScrollBuffer.quad_height
-            bottom = bottom - ScrollBuffer.quad_height
-            self.swap_horizontal_axis()
-        elif top <= 0:
-            top = top + ScrollBuffer.quad_height
-            bottom = bottom + ScrollBuffer.quad_height
-            self.swap_horizontal_axis()
+        scroll_x = delta_x
+        while abs(scroll_x) > 0:
+            if abs(scroll_x) > tile.TILE_SIZE:
+                if scroll_x > 0:
+                    left += tile.TILE_SIZE
+                    right += tile.TILE_SIZE
+                    scroll_x -= tile.TILE_SIZE
+                else:
+                    left -= tile.TILE_SIZE
+                    right -= tile.TILE_SIZE
+                    scroll_x += tile.TILE_SIZE
+            else:
+                left += scroll_x
+                right += scroll_x
+                if scroll_x > 0:
+                    offset_x = scroll_x
+                else:
+                    offset_x = tile.TILE_SIZE + scroll_x
+                scroll_x = 0
+            if left >= ScrollBuffer.quad_width:
+                left = left - ScrollBuffer.quad_width
+                right = right - ScrollBuffer.quad_width
+                self.swap_vertical_axis()
+            elif left <= 0:
+                left = left + ScrollBuffer.quad_width
+                right = right + ScrollBuffer.quad_width
+                self.swap_vertical_axis()
+        scroll_y = delta_y
+        while abs(scroll_y) > 0:
+            if abs(scroll_y) > tile.TILE_SIZE:
+                if scroll_y > 0:
+                    top += tile.TILE_SIZE
+                    bottom += tile.TILE_SIZE
+                    scroll_y -= tile.TILE_SIZE
+                else:
+                    top -= tile.TILE_SIZE
+                    bottom -= tile.TILE_SIZE
+                    scroll_y += tile.TILE_SIZE
+            else:
+                top += scroll_y
+                bottom += scroll_y
+                if scroll_y > 0:
+                    offset_y = scroll_y
+                else:
+                    offset_y = tile.TILE_SIZE + scroll_y
+                scroll_y = 0
+            if top >= ScrollBuffer.quad_height:
+                top = top - ScrollBuffer.quad_height
+                bottom = bottom - ScrollBuffer.quad_height
+                self.swap_horizontal_axis()
+            elif top <= 0:
+                top = top + ScrollBuffer.quad_height
+                bottom = bottom + ScrollBuffer.quad_height
+                self.swap_horizontal_axis()
+        self.offset = (offset_x, offset_y)
         self.view_rect = [left, top, right, bottom]
+        """
         n_cols_redraw = abs(math.ceil(delta_x / tile.TILE_SIZE))
         n_rows_redraw = abs(math.ceil(delta_y / tile.TILE_SIZE))
         row_range = None
@@ -317,6 +353,7 @@ class ScrollBuffer:
             row_range = range(math.floor(y / tile.TILE_SIZE) - n_rows_redraw - 1, math.ceil(y / tile.TILE_SIZE))
         self.background.scroll(n_cols_redraw, n_rows_redraw)
         self.redraw(row_range=row_range, col_range=col_range)
+        """
         
         
     def redraw(self, row_range=None, col_range=None):

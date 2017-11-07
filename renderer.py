@@ -87,13 +87,14 @@ class Renderer:
         pygame.quit()
 
     def render_entities(self, entities, view_surface, scroll_buffer):
-        for entity in entities:
-            x, y = scroll_buffer.map_to_view_coord((entity.rect.x, entity.rect.y))
-            for row, tile_row in enumerate(entity.tiled_area.tiles):
-                for col, tile_and_attr in enumerate(tile_row):
-                    tile_number, attr = tile_and_attr
-                    surface = self.surface_for_tile(tile_number, attr=attr)
-                    view_surface.blit(surface, (x + col * tile.TILE_SIZE, y + row * tile.TILE_SIZE))
+        pass
+        # for entity in entities:
+        #     x, y = scroll_buffer.map_to_view_coord((entity.rect.x, entity.rect.y))
+        #     for row, tile_row in enumerate(entity.tiled_area.tiles):
+        #         for col, tile_and_attr in enumerate(tile_row):
+        #             tile_number, attr = tile_and_attr
+        #             surface = self.surface_for_tile(tile_number, attr=attr)
+        #             view_surface.blit(surface, (x + col * tile.TILE_SIZE, y + row * tile.TILE_SIZE))
 
     def surface_for_map_tile(self, map_row, map_col):
         tile_number = self.cartridge.map.get_tile(map_row, map_col)
@@ -252,8 +253,82 @@ class Background:
                 self.set_buffered_tile_and_attr(col_range.start + tile_col, row_range.start + tile_row, tile_and_attr)
         
 
-
 class ScrollBuffer:
+    quad_width = map.Map.section_width * tile.TILE_SIZE
+    quad_height = map.Map.section_height * tile.TILE_SIZE
+
+    def __init__(self, renderer):
+        self.renderer = renderer
+        self.quadrants = [
+            pygame.Surface((map.Map.section_width * tile.TILE_SIZE, map.Map.section_height * tile.TILE_SIZE))
+            for _ in range(0, 4)
+        ]
+        self.quadrants[0].fill((255, 0, 0))
+        self.quadrants[1].fill((0, 255, 0))
+        self.quadrants[2].fill((0, 0, 255))
+        self.quadrants[3].fill((255, 0, 255))
+        self.coord = (map.Map.section_width / 2, map.Map.section_height / 2)  # col, row
+        self.offset = (0, 0)  # pixel offset
+    
+    def swap_vertical_axis(self):
+        top_left, top_right, bottom_left, bottom_right = self.quadrants
+        self.quadrants = [top_right, top_left, bottom_right, bottom_left]
+        
+    def swap_horizontal_axis(self):
+        top_left, top_right, bottom_left, bottom_right = self.quadrants
+        self.quadrants = [bottom_left, bottom_right, top_left, top_right]
+        
+    def render(self, surface):
+        col, row = self.coord
+        offset_x, offset_y = self.offset
+        left = col * tile.TILE_SIZE + offset_x
+        top = row * tile.TILE_SIZE + offset_y
+        right = left + ScrollBuffer.quad_width
+        bottom = top + ScrollBuffer.quad_height
+        surface.blit(self.quadrants[0], (0, 0), area=(left, top, ScrollBuffer.quad_width - left, ScrollBuffer.quad_height - top))
+        surface.blit(self.quadrants[1], (ScrollBuffer.quad_width - left, 0), area=(0, top, right, ScrollBuffer.quad_height - top))
+        surface.blit(self.quadrants[2], (0, ScrollBuffer.quad_height - top), area=(left, 0, ScrollBuffer.quad_width - left, bottom))
+        surface.blit(self.quadrants[3], (ScrollBuffer.quad_width - left, ScrollBuffer.quad_height - top), area=(0, 0, right, bottom))
+
+    def scroll(self, delta_x, delta_y):
+        coord_x, coord_y = self.coord
+        offset_x, offset_y = self.offset
+        scroll_direc = 1 if delta_x >=0 else -1
+        scroll_amt = abs(delta_x)
+        while scroll_amt > 0:
+            if scroll_amt > tile.TILE_SIZE:
+                coord_x += scroll_direc
+                scroll_amt -= tile.TILE_SIZE
+                if coord_x < 0 or coord_x > map.Map.section_width:
+                    coord_x = clamp(coord_x, 0, map.Map.section_width)
+                    self.swap_vertical_axis()
+            else:
+                if scroll_direc >= 0:
+                    offset_x = scroll_amt
+                else:
+                    offset_x = tile.TILE_SIZE - scroll_amt
+                scroll_amt = 0
+        scroll_direc = 1 if delta_y >=0 else -1
+        scroll_amt = abs(delta_y)
+        while scroll_amt > 0:
+            if scroll_amt > tile.TILE_SIZE:
+                coord_y += scroll_direc
+                scroll_amt -= tile.TILE_SIZE
+                if coord_y < 0 or coord_y > map.Map.section_height * 2:
+                    coord_y = clamp(coord_y, 0, map.Map.section_height * 2)
+                    self.swap_horizontal_axis()
+            else:
+                if scroll_direc >= 0:
+                    offset_y = scroll_amt
+                else:
+                    offset_y = tile.TILE_SIZE - scroll_amt
+                scroll_amt = 0
+        self.coord = (coord_x, coord_y)
+        self.offset = (offset_x, offset_y)
+        
+
+
+class ScrollBufferOld:
     quad_width = map.Map.section_width * tile.TILE_SIZE
     quad_height = map.Map.section_height * tile.TILE_SIZE
 
@@ -282,24 +357,24 @@ class ScrollBuffer:
     def scroll(self, delta_x, delta_y):
         offset_x, offset_y = self.offset
         left, top, right, bottom = self.view_rect
-        scroll_x = delta_x
-        while abs(scroll_x) > 0:
-            if abs(scroll_x) > tile.TILE_SIZE:
-                if scroll_x > 0:
-                    left += tile.TILE_SIZE
-                    right += tile.TILE_SIZE
-                    scroll_x -= tile.TILE_SIZE
-                else:
-                    left -= tile.TILE_SIZE
-                    right -= tile.TILE_SIZE
-                    scroll_x += tile.TILE_SIZE
+        scroll_x = abs(delta_x)
+        if delta_x >= 0:
+            scroll_direc = 1
+        else:
+            scroll_direc = -1
+        while scroll_x > 0:
+            if scroll_x > tile.TILE_SIZE:
+                left += scroll_direc * tile.TILE_SIZE
+                right += scroll_direc * tile.TILE_SIZE
+                self.background.scroll(scroll_direc * 1, 0)
+                scroll_x -= tile.TILE_SIZE
             else:
-                left += scroll_x
-                right += scroll_x
-                if scroll_x > 0:
+                left += scroll_direc * scroll_x
+                right += scroll_direc * scroll_x
+                if scroll_direc > 0:
                     offset_x = scroll_x
                 else:
-                    offset_x = tile.TILE_SIZE + scroll_x
+                    offset_x = tile.TILE_SIZE - scroll_x
                 scroll_x = 0
             if left >= ScrollBuffer.quad_width:
                 left = left - ScrollBuffer.quad_width
@@ -309,24 +384,26 @@ class ScrollBuffer:
                 left = left + ScrollBuffer.quad_width
                 right = right + ScrollBuffer.quad_width
                 self.swap_vertical_axis()
-        scroll_y = delta_y
-        while abs(scroll_y) > 0:
-            if abs(scroll_y) > tile.TILE_SIZE:
-                if scroll_y > 0:
-                    top += tile.TILE_SIZE
-                    bottom += tile.TILE_SIZE
-                    scroll_y -= tile.TILE_SIZE
-                else:
-                    top -= tile.TILE_SIZE
-                    bottom -= tile.TILE_SIZE
-                    scroll_y += tile.TILE_SIZE
+            if scroll_x > tile.TILE_SIZE:
+                self.redraw_col(5)
+        scroll_y = abs(delta_y)
+        if delta_y >= 0:
+            scroll_direc = 1
+        else:
+            scroll_direc = -1
+        while scroll_y > 0:
+            if scroll_y > tile.TILE_SIZE:
+                left += scroll_direc * tile.TILE_SIZE
+                right += scroll_direc * tile.TILE_SIZE
+                self.background.scroll(0, scroll_direc * 1)
+                scroll_y -= tile.TILE_SIZE
             else:
-                top += scroll_y
-                bottom += scroll_y
-                if scroll_y > 0:
+                top += scroll_direc * scroll_y
+                bottom += scroll_direc * scroll_y
+                if scroll_direc > 0:
                     offset_y = scroll_y
                 else:
-                    offset_y = tile.TILE_SIZE + scroll_y
+                    offset_y = tile.TILE_SIZE - scroll_y
                 scroll_y = 0
             if top >= ScrollBuffer.quad_height:
                 top = top - ScrollBuffer.quad_height
@@ -355,6 +432,8 @@ class ScrollBuffer:
         self.redraw(row_range=row_range, col_range=col_range)
         """
         
+    def redraw_col(self, col):
+        pass
         
     def redraw(self, row_range=None, col_range=None):
         left, top, right, bottom = self.view_rect

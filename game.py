@@ -32,7 +32,7 @@ class Game:
     def advance(self):
         for entity in self.entities:
             # add gravity vector
-            entity.vector = entity.vector.add(physics.Vector(x=0, y=3))
+            # entity.vector = entity.vector.add(physics.Vector(x=0, y=3))
             v_x = 1 if entity.vector.x >= 0 else -1
             v_y = 1 if entity.vector.y >= 0 else -1
             for i in range(0, max(abs(entity.vector.x), abs(entity.vector.y))):
@@ -40,14 +40,14 @@ class Game:
                 if i < abs(entity.vector.y):
                     # test new y for collision
                     new_rect = entity.rect.move(0, v_y)  
-                    if not self.collides_with_background(new_rect):
-                        delta_y = v_y
+                    # if not self.collides_with_background(new_rect):
+                    delta_y = v_y
                 delta_x = 0
                 if i < abs(entity.vector.x):
                     # test new x for collission
                     new_rect = entity.rect.move(v_x, 0)  
-                    if not self.collides_with_background(new_rect):
-                        delta_x = v_x
+                    # if not self.collides_with_background(new_rect):
+                    delta_x = v_x
                 entity.rect.move_ip(delta_x, delta_y)
                 if delta_x == 0:
                     entity.vector.x = 0

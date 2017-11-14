@@ -96,7 +96,7 @@ class Renderer:
         #             surface = self.surface_for_tile(tile_number, attr=attr)
         #             view_surface.blit(surface, (x + col * tile.TILE_SIZE, y + row * tile.TILE_SIZE))
 
-    def surface_for_map_tile(self, map_row, map_col):
+    def surface_for_map_tile(self, map_col, map_row):
         tile_number = self.cartridge.map.get_tile(map_row, map_col)
         if tile_number <= 0:
             return None
@@ -268,6 +268,7 @@ class ScrollBuffer:
         self.quadrants[2].fill((0, 0, 255))
         self.quadrants[3].fill((255, 0, 255))
         self.coord = (map.Map.section_width / 2, map.Map.section_height / 2)  # col, row
+        self.map_coord = (0, 0)  # col, row
         self.offset = (0, 0)  # pixel offset
     
     def swap_vertical_axis(self):
@@ -292,13 +293,19 @@ class ScrollBuffer:
 
     def scroll(self, delta_x, delta_y):
         coord_x, coord_y = self.coord
+        map_coord_x, map_coord_y = self.map_coord
         offset_x, offset_y = self.offset
         scroll_direc = 1 if delta_x >=0 else -1
         scroll_amt = abs(delta_x)
         while scroll_amt > 0:
             if scroll_amt > tile.TILE_SIZE:
                 coord_x += scroll_direc
+                map_coord_x += scroll_direc
                 scroll_amt -= tile.TILE_SIZE
+                if scroll_direc > 0:
+                    self.draw_rect(int(coord_x + map.Map.section_width + 1), 0, 1, int(map.Map.section_height * 2))
+                elif scroll_direc < 0:
+                    self.draw_rect(int(coord_x - 1), 0, 1, int(map.Map.section_height * 2))
                 if coord_x < 0 or coord_x > map.Map.section_width:
                     coord_x = clamp(coord_x, 0, map.Map.section_width)
                     self.swap_vertical_axis()
@@ -313,6 +320,7 @@ class ScrollBuffer:
         while scroll_amt > 0:
             if scroll_amt > tile.TILE_SIZE:
                 coord_y += scroll_direc
+                map_coord_y += scroll_direc
                 scroll_amt -= tile.TILE_SIZE
                 if coord_y < 0 or coord_y > map.Map.section_height * 2:
                     coord_y = clamp(coord_y, 0, map.Map.section_height * 2)
@@ -324,8 +332,46 @@ class ScrollBuffer:
                     offset_y = tile.TILE_SIZE - scroll_amt
                 scroll_amt = 0
         self.coord = (coord_x, coord_y)
+        self.map_coord = (map_coord_x, map_coord_y)
         self.offset = (offset_x, offset_y)
-        
+
+    def draw_rect(self, x, y, width, height): 
+        top_left, top_right, bottom_left, bottom_right = self.quadrants
+        map_coord_x, map_coord_y = self.map_coord
+        for row in range(y, y + height):
+            for col in range(x, x + width):
+                if row < map.Map.section_height:
+                    if col < map.Map.section_width:
+                        quadrant = top_left
+                        quad_offset_x = 0
+                        quad_offset_y = 0
+                    else:
+                        quadrant = top_right
+                        quad_offset_x = map.Map.section_width
+                        quad_offset_y = 0
+                else:
+                    if col < map.Map.section_width:
+                        quadrant = bottom_left
+                        quad_offset_x = 0
+                        quad_offset_y = map.Map.section_height
+                    else:
+                        quadrant = bottom_right
+                        quad_offset_x = map.Map.section_width
+                        quad_offset_y = map.Map.section_height
+                quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(),
+                    (
+                        (col - quad_offset_x) * tile.TILE_SIZE,
+                        (row - quad_offset_y) * tile.TILE_SIZE,
+                        tile.TILE_SIZE,
+                        tile.TILE_SIZE
+                    )
+                )
+                tile_surface = self.renderer.surface_for_map_tile(map_coord_x + col, map_coord_y + row)
+                if tile_surface:
+                    quadrant.blit(tile_surface, (
+                        (col - quad_offset_x) * tile.TILE_SIZE,
+                        (row - quad_offset_y) * tile.TILE_SIZE)
+                    )
 
 
 class ScrollBufferOld:

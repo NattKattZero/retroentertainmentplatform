@@ -7,6 +7,8 @@ class TestUtilities(unittest.TestCase):
         self.assertEqual(renderer.clamp(50, 0, 100), 50)
         self.assertEqual(renderer.clamp(-5, 0, 100), 95)
         self.assertEqual(renderer.clamp(106, 0, 100), 6)
+        self.assertEqual(renderer.clamp(2, 0, 1), 0)
+        self.assertEqual(renderer.clamp(-1, 0, 1), 1)
 
 class TestBackgroundBuffer(unittest.TestCase):
     def setUp(self):

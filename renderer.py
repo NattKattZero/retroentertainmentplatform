@@ -171,8 +171,8 @@ class ScrollBuffer:
         self.quadrants[1].fill((0, 255, 0))
         self.quadrants[2].fill((0, 0, 255))
         self.quadrants[3].fill((255, 0, 255))
-        coord_x = map.Map.section_width / 2
-        coord_y = map.Map.section_height / 2
+        coord_x = int(map.Map.section_width / 2)
+        coord_y = int(map.Map.section_height / 2)
         self.coord = (coord_x, coord_y)  # col, row
         self.map_coord = (-coord_x, -coord_y)  # col, row
         self.offset = (0, 0)  # pixel offset
@@ -204,10 +204,12 @@ class ScrollBuffer:
         scroll_direc = 1 if delta_x >=0 else -1
         scroll_amt = abs(delta_x)
         while scroll_amt > 0:
-            if scroll_amt > tile.TILE_SIZE:
+            if scroll_amt >= tile.TILE_SIZE:
                 coord_x += scroll_direc
                 map_coord_x += scroll_direc
                 scroll_amt -= tile.TILE_SIZE
+                if scroll_amt == 0:
+                    offset_x = 0
                 if scroll_direc > 0:
                     self.draw_rect(int(coord_x + map.Map.section_width + 1), 0, 1, int(map.Map.section_height * 2))
                 elif scroll_direc < 0:
@@ -224,7 +226,7 @@ class ScrollBuffer:
         scroll_direc = 1 if delta_y >=0 else -1
         scroll_amt = abs(delta_y)
         while scroll_amt > 0:
-            if scroll_amt > tile.TILE_SIZE:
+            if scroll_amt >= tile.TILE_SIZE:
                 coord_y += scroll_direc
                 map_coord_y += scroll_direc
                 scroll_amt -= tile.TILE_SIZE
@@ -282,11 +284,11 @@ class ScrollBuffer:
 
 def clamp(n, min_n, max_n):
     if n > max_n:
-        while n > max_n:
+        while n >= max_n:
             n -= (max_n - min_n)
         return n
     elif n < min_n:
-        while n < min_n:
+        while n <= min_n:
             n += (max_n - min_n)
         return n
     return n

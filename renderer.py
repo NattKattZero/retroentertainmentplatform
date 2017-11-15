@@ -215,7 +215,9 @@ class ScrollBuffer:
                 elif scroll_direc < 0:
                     self.draw_rect(int(coord_x - 1), 0, 1, int(map.Map.section_height * 2))
                 if coord_x < 0 or coord_x > map.Map.section_width:
+                    print(f'coord_x pre-clamp: {coord_x}')
                     coord_x = clamp(coord_x, 0, map.Map.section_width)
+                    print(f'coord_x post-clamp: {coord_x}')
                     self.swap_vertical_axis()
             else:
                 if scroll_direc >= 0:
@@ -284,11 +286,11 @@ class ScrollBuffer:
 
 def clamp(n, min_n, max_n):
     if n > max_n:
-        while n >= max_n:
-            n -= (max_n - min_n)
+        while n > max_n:
+            n -= (max_n - min_n + 1)
         return n
     elif n < min_n:
-        while n <= min_n:
-            n += (max_n - min_n)
+        while n < min_n:
+            n += (max_n - min_n + 1)
         return n
     return n

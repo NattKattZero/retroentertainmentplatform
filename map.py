@@ -57,11 +57,13 @@ class Map:
 
     def get_tile(self, row, col):
         idx_section = self.get_section_address(row, col)
-        if idx_section < 0:
+        if idx_section not in range(0, len(self.sections)):
             return 0
         tile_row = row % Map.section_height
         tile_col = col % Map.section_width
         section = self.sections[idx_section]
+        if not section:
+            return 0
         return section[tile_row][tile_col]
 
     def get_attr(self, row, col):

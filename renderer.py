@@ -156,6 +156,7 @@ class Camera:
                 self.x = x - 30
                 self.scroll_buffer.scroll(delta_x - 30, 0)
 
+
 class ScrollBuffer:
     quad_width = map.Map.section_width * tile.TILE_SIZE
     quad_height = map.Map.section_height * tile.TILE_SIZE
@@ -170,8 +171,10 @@ class ScrollBuffer:
         self.quadrants[1].fill((0, 255, 0))
         self.quadrants[2].fill((0, 0, 255))
         self.quadrants[3].fill((255, 0, 255))
-        self.coord = (map.Map.section_width / 2, map.Map.section_height / 2)  # col, row
-        self.map_coord = (0, 0)  # col, row
+        coord_x = map.Map.section_width / 2
+        coord_y = map.Map.section_height / 2
+        self.coord = (coord_x, coord_y)  # col, row
+        self.map_coord = (-coord_x, -coord_y)  # col, row
         self.offset = (0, 0)  # pixel offset
     
     def swap_vertical_axis(self):
@@ -269,7 +272,7 @@ class ScrollBuffer:
                         tile.TILE_SIZE
                     )
                 )
-                tile_surface = self.renderer.surface_for_map_tile(map_coord_x + col, map_coord_y + row)
+                tile_surface = self.renderer.surface_for_map_tile(int(map_coord_x + col), int(map_coord_y + row))
                 if tile_surface:
                     quadrant.blit(tile_surface, (
                         (col - quad_offset_x) * tile.TILE_SIZE,

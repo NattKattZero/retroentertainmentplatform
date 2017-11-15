@@ -10,7 +10,7 @@ class TestUtilities(unittest.TestCase):
         self.assertEqual(renderer.clamp(2, 0, 1), 0)
         self.assertEqual(renderer.clamp(-1, 0, 1), 1)
 
-class TestBackgroundBuffer(unittest.TestCase):
+class TestMap(unittest.TestCase):
     def setUp(self):
         self.game_map = map.Map()
         map_data = b'\x00'*(map.Map.section_width * map.Map.section_height)

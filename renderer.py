@@ -177,7 +177,8 @@ class ScrollBuffer:
         self.coord = (coord_x, coord_y)  # col, row
         self.map_coord = (-coord_x, -coord_y)  # col, row
         self.offset = (0, 0)  # pixel offset
-        # self.draw_rect(0, 0, map.Map.section_width * 2, map.Map.section_height * 2)
+        # fill in the whole buffer initially
+        self.draw_rect(0, 0, map.Map.section_width * 2, map.Map.section_height * 2)
     
     def swap_vertical_axis(self):
         top_left, top_right, bottom_left, bottom_right = self.quadrants
@@ -204,11 +205,9 @@ class ScrollBuffer:
         map_coord_x, map_coord_y = self.map_coord
         offset_x, offset_y = self.offset
         scroll_direc = 1 if delta_x >= 0 else -1
-        # offset isn't accumulating correctly, this needs thought
         offset_x += delta_x
         while abs(offset_x) >= tile.TILE_SIZE:
             coord_x += scroll_direc
-            # map_coord_x += scroll_direc
             offset_x -= (scroll_direc * tile.TILE_SIZE)
             if coord_x < 0 or coord_x > map.Map.section_width:
                 coord_x = clamp(coord_x, 0, map.Map.section_width)
@@ -219,50 +218,7 @@ class ScrollBuffer:
                 self.draw_rect(int(coord_x + map.Map.section_width + 1), 0, 1, int(map.Map.section_height * 2))
             elif scroll_direc < 0:
                 self.draw_rect(int(coord_x - 1), 0, 1, int(map.Map.section_height * 2))
-        # print(f'coord_x: {coord_x}, offset_x: {offset_x}')
-        """
-        scroll_amt = offset_x + abs(delta_x)
-        while scroll_amt > 0:
-            if scroll_amt >= tile.TILE_SIZE:
-                coord_x += scroll_direc
-                map_coord_x += scroll_direc
-                scroll_amt -= tile.TILE_SIZE
-                if coord_x < 0 or coord_x > map.Map.section_width:
-                    coord_x = clamp(coord_x, 0, map.Map.section_width)
-                    self.swap_vertical_axis()
-                if scroll_amt == 0:
-                    offset_x = 0
-                if scroll_direc > 0:
-                    self.map_coord = (map_coord_x, map_coord_y)
-                    self.draw_rect(int(coord_x + map.Map.section_width + 1), 0, 1, int(map.Map.section_height * 2))
-                elif scroll_direc < 0:
-                    self.map_coord = (map_coord_x, map_coord_y)
-                    self.draw_rect(int(coord_x - 1), 0, 1, int(map.Map.section_height * 2))
-            else:
-                if scroll_direc >= 0:
-                    offset_x = scroll_amt
-                else:
-                    offset_x = tile.TILE_SIZE - scroll_amt
-                scroll_amt = 0
-        """
-        """
-        scroll_direc = 1 if delta_y >=0 else -1
-        scroll_amt = abs(delta_y)
-        while scroll_amt > 0:
-            if scroll_amt >= tile.TILE_SIZE:
-                coord_y += scroll_direc
-                map_coord_y += scroll_direc
-                scroll_amt -= tile.TILE_SIZE
-                if coord_y < 0 or coord_y > map.Map.section_height * 2:
-                    coord_y = clamp(coord_y, 0, map.Map.section_height * 2)
-                    self.swap_horizontal_axis()
-            else:
-                if scroll_direc >= 0:
-                    offset_y = scroll_amt
-                else:
-                    offset_y = tile.TILE_SIZE - scroll_amt
-                scroll_amt = 0
-        """
+        # add y scrolling
         self.coord = (coord_x, coord_y)
         self.map_coord = (map_coord_x, map_coord_y)
         self.offset = (offset_x, offset_y)

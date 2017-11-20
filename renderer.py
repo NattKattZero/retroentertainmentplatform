@@ -178,7 +178,7 @@ class ScrollBuffer:
         self.map_coord = (-coord_x, -coord_y)  # col, row
         self.offset = (0, 0)  # pixel offset
         # fill in the whole buffer initially
-        self.draw_rect(0, 0, map.Map.section_width * 2, map.Map.section_height * 2)
+        # self.draw_rect(0, 0, map.Map.section_width * 2, map.Map.section_height * 2)
     
     def swap_vertical_axis(self):
         top_left, top_right, bottom_left, bottom_right = self.quadrants
@@ -214,6 +214,11 @@ class ScrollBuffer:
                 self.swap_vertical_axis()
                 map_coord_x += map.Map.section_width
                 self.map_coord = (map_coord_x, map_coord_y)
+                if scroll_direc > 0:
+                    self.draw_rect(int(coord_x + map.Map.section_width + 1), 0, 1, int(map.Map.section_height * 2))
+                elif scroll_direc < 0:
+                    self.draw_rect(int(coord_x - 1), 0, 1, int(map.Map.section_height * 2))
+                coord_x += scroll_direc
             if scroll_direc > 0:
                 self.draw_rect(int(coord_x + map.Map.section_width + 1), 0, 1, int(map.Map.section_height * 2))
             elif scroll_direc < 0:
@@ -226,7 +231,6 @@ class ScrollBuffer:
     def draw_rect(self, x, y, width, height): 
         top_left, top_right, bottom_left, bottom_right = self.quadrants
         map_coord_x, map_coord_y = self.map_coord
-        print(f'draw_rect: x:{x}, map_coord_x:{map_coord_x}')
         for row in range(y, y + height):
             for col in range(x, x + width):
                 if row < map.Map.section_height:
@@ -247,14 +251,14 @@ class ScrollBuffer:
                         quadrant = bottom_right
                         quad_offset_x = map.Map.section_width + 1
                         quad_offset_y = map.Map.section_height
-                quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(),
-                    (
-                        (col - quad_offset_x) * tile.TILE_SIZE,
-                        (row - quad_offset_y) * tile.TILE_SIZE,
-                        tile.TILE_SIZE,
-                        tile.TILE_SIZE
-                    )
-                )
+                # quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(),
+                #     (
+                #         (col - quad_offset_x) * tile.TILE_SIZE,
+                #         (row - quad_offset_y) * tile.TILE_SIZE,
+                #         tile.TILE_SIZE,
+                #         tile.TILE_SIZE
+                #     )
+                # )
                 tile_surface = self.renderer.surface_for_map_tile(int(map_coord_x + col), int(map_coord_y + row))
                 if tile_surface:
                     quadrant.blit(tile_surface, (

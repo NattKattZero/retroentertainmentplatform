@@ -172,6 +172,7 @@ class ScrollBuffer:
         self.quadrants[1].fill((0, 255, 0))
         self.quadrants[2].fill((0, 0, 255))
         self.quadrants[3].fill((255, 0, 255))
+        self.map_offset = (-int(map.Map.section_width / 2), -int(map.Map.section_height / 2))
         self.coord = LocalCoord()
         self.coord = self.coord.moved(int(map.Map.section_width / 2) * tile.TILE_SIZE, int(map.Map.section_height / 2) * tile.TILE_SIZE)
         # fill in the whole buffer initially
@@ -226,13 +227,13 @@ class ScrollBuffer:
     def draw_rect(self, top_left, bottom_right):
         # print(f'draw_rect. top_left: {top_left}, bottom_right: {bottom_right}')
         top_left_quad, top_right_quad, bottom_left_quad, bottom_right_quad = self.quadrants
+        map_offset_x, map_offset_y = self.map_offset
         # FIXME: should use bottom_right instead of hard-coding width/height
         for row in range(0, map.Map.section_height):
             for col in range(0, map.Map.section_width):
                 coord = top_left.moved(col * tile.TILE_SIZE, row * tile.TILE_SIZE)
                 quadrant_x = clamp(coord.quadrant[0], 0, 1)
                 quadrant_y = clamp(coord.quadrant[1], 0, 1)
-                # print(coord)
                 if quadrant_y == 0:
                     if quadrant_x == 0:
                         quadrant = top_left_quad
@@ -261,8 +262,8 @@ class ScrollBuffer:
                 )
                 # print(f'getting tile: ({coord.quadrant * map.Map.section_width + coord.tile}, {coord.quadrant * map.Map.section_height + coord.tile})')
                 tile_surface = self.renderer.surface_for_map_tile(
-                    coord.quadrant[0] * map.Map.section_width + coord.tile[0],
-                    coord.quadrant[1] * map.Map.section_height + coord.tile[1]
+                    (coord.quadrant[0] * map.Map.section_width + coord.tile[0]) + map_offset_x,
+                    (coord.quadrant[1] * map.Map.section_height + coord.tile[1]) + map_offset_y
                 )
                 # tile_surface = self.renderer.surface_for_map_tile(
                 #     0,

@@ -176,7 +176,13 @@ class ScrollBuffer:
         self.coord = LocalCoord()
         self.coord = self.coord.moved(int(map.Map.section_width / 2) * tile.TILE_SIZE, int(map.Map.section_height / 2) * tile.TILE_SIZE)
         # fill in the whole buffer initially
-        # self.draw_rect(0, 0, map.Map.section_width * 2, map.Map.section_height * 2)
+        upper_left = LocalCoord()
+        upper_left.left = 0
+        upper_left.top = 0
+        lower_right = LocalCoord()
+        lower_right.right = map.Map.section_width * 2
+        lower_right.bottom = map.Map.section_height * 2
+        self.draw_rect(upper_left, lower_right)
     
     def swap_vertical_axis(self):
         top_left, top_right, bottom_left, bottom_right = self.quadrants
@@ -229,8 +235,10 @@ class ScrollBuffer:
         top_left_quad, top_right_quad, bottom_left_quad, bottom_right_quad = self.quadrants
         map_offset_x, map_offset_y = self.map_offset
         # FIXME: should use bottom_right instead of hard-coding width/height
+        width = abs(bottom_right.as_tiles()[0] - top_left.as_tiles()[0]) + 1
         for row in range(0, map.Map.section_height):
-            for col in range(0, map.Map.section_width):
+            # for col in range(map.Map.section_width+1, map.Map.section_width+2):
+            for col in range(top_left.tile[0], width):
                 coord = top_left.moved(col * tile.TILE_SIZE, row * tile.TILE_SIZE)
                 quadrant_x = clamp(coord.quadrant[0], 0, 1)
                 quadrant_y = clamp(coord.quadrant[1], 0, 1)
@@ -260,15 +268,10 @@ class ScrollBuffer:
                         tile.TILE_SIZE
                     )
                 )
-                # print(f'getting tile: ({coord.quadrant * map.Map.section_width + coord.tile}, {coord.quadrant * map.Map.section_height + coord.tile})')
                 tile_surface = self.renderer.surface_for_map_tile(
                     (coord.quadrant[0] * map.Map.section_width + coord.tile[0]) + map_offset_x,
                     (coord.quadrant[1] * map.Map.section_height + coord.tile[1]) + map_offset_y
                 )
-                # tile_surface = self.renderer.surface_for_map_tile(
-                #     0,
-                #     0
-                # )
                 if tile_surface:
                     quadrant.blit(tile_surface, (
                         (top_left.tile[0] + col - quad_offset_x) * tile.TILE_SIZE,
@@ -298,9 +301,10 @@ class LocalCoord():
         quadrant_x, quadrant_y = self.quadrant
         tile_x, tile_y = self.tile
         pixel_x, pixel_y = self.pixel
+        total_pixels_x, total_pixels_y = self.as_pixels()
         # move in the x direction
         move_direc = -1 if delta_x < 0 else 1
-        move_remain = abs(delta_x) + quadrant_x * map.Map.section_width * tile.TILE_SIZE + tile_x * tile.TILE_SIZE + pixel_x
+        move_remain = abs(delta_x) + total_pixels_x
         quadrant_x = tile_x = pixel_x = 0
         while move_remain >= map.Map.section_width * tile.TILE_SIZE:
             quadrant_x += move_direc
@@ -315,7 +319,7 @@ class LocalCoord():
             pixel_x = tile.TILE_SIZE - move_remain
         # move in the y direction
         move_direc = -1 if delta_y < 0 else 1
-        move_remain = abs(delta_y) + quadrant_y * map.Map.section_height * tile.TILE_SIZE + tile_y * tile.TILE_SIZE + pixel_y
+        move_remain = abs(delta_y) + total_pixels_y
         quadrant_y = tile_y = pixel_y = 0
         while move_remain >= map.Map.section_height * tile.TILE_SIZE:
             quadrant_y += move_direc
@@ -332,6 +336,16 @@ class LocalCoord():
         new_coord.tile = (tile_x, tile_y)
         new_coord.pixel = (pixel_x, pixel_y)
         return new_coord
+
+    def as_pixels(self):
+        pixels_x = self.quadrant[0] * map.Map.section_width * tile.TILE_SIZE + self.tile[0] * tile.TILE_SIZE + self.pixel[0]
+        pixels_y = self.quadrant[1] * map.Map.section_height * tile.TILE_SIZE + self.tile[1] * tile.TILE_SIZE + self.pixel[1]
+        return (pixels_x, pixels_y)
+
+    def as_tiles(self):
+        tiles_x = self.quadrant[0] * map.Map.section_width + self.tile[0]
+        tiles_y = self.quadrant[1] * map.Map.section_height + self.tile[1]
+        return (tiles_x, tiles_y)
 
     def __str__(self):
         return f'quad: ({self.quadrant[0]}, {self.quadrant[1]}), tile: ({self.tile[0]}, {self.tile[1]}), pixel: ({self.pixel[0]}, {self.pixel[1]})'

@@ -1,4 +1,5 @@
 import math
+from collections import namedtuple
 
 import pygame
 
@@ -7,6 +8,8 @@ import game
 import tile
 import map
 import physics
+
+Point = namedtuple('Point', ['x', 'y'])
 
 class Renderer:
     def __init__(self, cartridge):
@@ -193,12 +196,12 @@ class ScrollBuffer:
         self.quadrants = [bottom_left, bottom_right, top_left, top_right]
         
     def render(self, surface):
-        left = self.coord.tile[0] * tile.TILE_SIZE + self.coord.pixel[0]
-        top = self.coord.tile[1] * tile.TILE_SIZE + self.coord.pixel[1]
+        left = self.coord.tile.x * tile.TILE_SIZE + self.coord.pixel.x
+        top = self.coord.tile.y * tile.TILE_SIZE + self.coord.pixel.y
         right = left + ScrollBuffer.quad_width
         bottom = top + ScrollBuffer.quad_height
-        if self.coord.quadrant[1] == 0:
-            if self.coord.quadrant[0] == 0:
+        if self.coord.quadrant.y == 0:
+            if self.coord.quadrant.x == 0:
                 top_left = self.quadrants[0]
                 top_right = self.quadrants[1]
                 bottom_left = self.quadrants[2]
@@ -227,7 +230,7 @@ class ScrollBuffer:
     def scroll(self, delta_x, delta_y):
         self.coord = self.coord.moved(delta_x, delta_y)
         top_left = self.coord
-        bottom_right = top_left.moved(map.Map.section_width * tile.TILE_SIZE + 1, 0)
+        bottom_right = top_left.moved(map.Map.section_width * tile.TILE_SIZE + 1, map.Map.section_height * tile.TILE_SIZE + 1)
         self.draw_rect(top_left, bottom_right)
 
     def draw_rect(self, top_left, bottom_right):
@@ -235,13 +238,15 @@ class ScrollBuffer:
         top_left_quad, top_right_quad, bottom_left_quad, bottom_right_quad = self.quadrants
         map_offset_x, map_offset_y = self.map_offset
         # FIXME: should use bottom_right instead of hard-coding width/height
-        width = abs(bottom_right.as_tiles()[0] - top_left.as_tiles()[0]) + 1
-        for row in range(0, map.Map.section_height):
+        width = abs(bottom_right.as_tiles().x - top_left.as_tiles().x) + 1
+        height = abs(bottom_right.as_tiles().y - top_left.as_tiles().y) + 1
+        # for row in range(0, map.Map.section_height):
+        for row in range(top_left.tile.y, height):
             # for col in range(map.Map.section_width+1, map.Map.section_width+2):
-            for col in range(top_left.tile[0], width):
+            for col in range(top_left.tile.x, width):
                 coord = top_left.moved(col * tile.TILE_SIZE, row * tile.TILE_SIZE)
-                quadrant_x = clamp(coord.quadrant[0], 0, 1)
-                quadrant_y = clamp(coord.quadrant[1], 0, 1)
+                quadrant_x = clamp(coord.quadrant.x, 0, 1)
+                quadrant_y = clamp(coord.quadrant.y, 0, 1)
                 if quadrant_y == 0:
                     if quadrant_x == 0:
                         quadrant = top_left_quad
@@ -262,20 +267,20 @@ class ScrollBuffer:
                         quad_offset_y = map.Map.section_height
                 quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(),
                     (
-                        (top_left.tile[0] + col - quad_offset_x) * tile.TILE_SIZE,
-                        (top_left.tile[1] + row - quad_offset_y) * tile.TILE_SIZE,
+                        (top_left.tile.x + col - quad_offset_x) * tile.TILE_SIZE,
+                        (top_left.tile.y + row - quad_offset_y) * tile.TILE_SIZE,
                         tile.TILE_SIZE,
                         tile.TILE_SIZE
                     )
                 )
                 tile_surface = self.renderer.surface_for_map_tile(
-                    (coord.quadrant[0] * map.Map.section_width + coord.tile[0]) + map_offset_x,
-                    (coord.quadrant[1] * map.Map.section_height + coord.tile[1]) + map_offset_y
+                    (coord.quadrant.x * map.Map.section_width + coord.tile.x) + map_offset_x,
+                    (coord.quadrant.y * map.Map.section_height + coord.tile.y) + map_offset_y
                 )
                 if tile_surface:
                     quadrant.blit(tile_surface, (
-                        (top_left.tile[0] + col - quad_offset_x) * tile.TILE_SIZE,
-                        (top_left.tile[1] + row - quad_offset_y) * tile.TILE_SIZE)
+                        (top_left.tile.x + col - quad_offset_x) * tile.TILE_SIZE,
+                        (top_left.tile.y + row - quad_offset_y) * tile.TILE_SIZE)
                     )
 
 
@@ -292,9 +297,9 @@ def clamp(n, min_n, max_n):
 
 class LocalCoord():
     def __init__(self):
-        self.quadrant = (0, 0)
-        self.tile = (0, 0)
-        self.pixel = (0, 0)
+        self.quadrant = Point(0, 0)
+        self.tile = Point(0, 0)
+        self.pixel = Point(0, 0)
 
     def moved(self, delta_x, delta_y):
         new_coord = LocalCoord()
@@ -332,20 +337,20 @@ class LocalCoord():
             pixel_y = move_remain
         else:
             pixel_y = tile.TILE_SIZE - move_remain
-        new_coord.quadrant = (quadrant_x, quadrant_y)
-        new_coord.tile = (tile_x, tile_y)
-        new_coord.pixel = (pixel_x, pixel_y)
+        new_coord.quadrant = Point(quadrant_x, quadrant_y)
+        new_coord.tile = Point(tile_x, tile_y)
+        new_coord.pixel = Point(pixel_x, pixel_y)
         return new_coord
 
     def as_pixels(self):
-        pixels_x = self.quadrant[0] * map.Map.section_width * tile.TILE_SIZE + self.tile[0] * tile.TILE_SIZE + self.pixel[0]
-        pixels_y = self.quadrant[1] * map.Map.section_height * tile.TILE_SIZE + self.tile[1] * tile.TILE_SIZE + self.pixel[1]
-        return (pixels_x, pixels_y)
+        pixels_x = self.quadrant.x * map.Map.section_width * tile.TILE_SIZE + self.tile.x * tile.TILE_SIZE + self.pixel.x
+        pixels_y = self.quadrant.y * map.Map.section_height * tile.TILE_SIZE + self.tile.y * tile.TILE_SIZE + self.pixel.y
+        return Point(pixels_x, pixels_y)
 
     def as_tiles(self):
-        tiles_x = self.quadrant[0] * map.Map.section_width + self.tile[0]
-        tiles_y = self.quadrant[1] * map.Map.section_height + self.tile[1]
-        return (tiles_x, tiles_y)
+        tiles_x = self.quadrant.x * map.Map.section_width + self.tile.x
+        tiles_y = self.quadrant.y * map.Map.section_height + self.tile.y
+        return Point(tiles_x, tiles_y)
 
     def __str__(self):
-        return f'quad: ({self.quadrant[0]}, {self.quadrant[1]}), tile: ({self.tile[0]}, {self.tile[1]}), pixel: ({self.pixel[0]}, {self.pixel[1]})'
+        return f'quad: ({self.quadrant.x}, {self.quadrant.y}), tile: ({self.tile.x}, {self.tile.y}), pixel: ({self.pixel.x}, {self.pixel.y})'

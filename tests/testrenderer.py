@@ -33,14 +33,14 @@ class TestLocalCoord(unittest.TestCase):
     def test_moved(self):
         l = renderer.LocalCoord()
         moved_one_pixel = l.moved(1, 0)
-        self.assertEqual(moved_one_pixel.pixel[0], 1)
+        self.assertEqual(moved_one_pixel.pixel.x, 1)
         moved_one_tile = l.moved(tile.TILE_SIZE, 0)
-        self.assertEqual(moved_one_tile.tile[0], 1)
-        self.assertEqual(moved_one_tile.pixel[0], 0)
+        self.assertEqual(moved_one_tile.tile.x, 1)
+        self.assertEqual(moved_one_tile.pixel.x, 0)
         moved_one_screen = l.moved(map.Map.section_width * tile.TILE_SIZE, 0)
-        self.assertEqual(moved_one_screen.quadrant[0], 1)
-        self.assertEqual(moved_one_screen.tile[0], 0)
-        self.assertEqual(moved_one_screen.pixel[0], 0)
+        self.assertEqual(moved_one_screen.quadrant.x, 1)
+        self.assertEqual(moved_one_screen.tile.x, 0)
+        self.assertEqual(moved_one_screen.pixel.x, 0)
 
     def test_as_pixels(self):
         l = renderer.LocalCoord()

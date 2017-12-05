@@ -184,22 +184,16 @@ class ScrollBuffer:
         upper_left.top = 0
         lower_right = upper_left.moved(map.Map.section_width, map.Map.section_height)
         # self.draw_rect(upper_left, lower_right)
-    
-    def swap_vertical_axis(self):
-        top_left, top_right, bottom_left, bottom_right = self.quadrants
-        self.quadrants = [top_right, top_left, bottom_right, bottom_left]
-        
-    def swap_horizontal_axis(self):
-        top_left, top_right, bottom_left, bottom_right = self.quadrants
-        self.quadrants = [bottom_left, bottom_right, top_left, top_right]
         
     def render(self, surface):
         left = self.coord.tile.x * tile.TILE_SIZE + self.coord.pixel.x
         top = self.coord.tile.y * tile.TILE_SIZE + self.coord.pixel.y
         right = left + ScrollBuffer.quad_width
         bottom = top + ScrollBuffer.quad_height
-        if clamp(self.coord.quadrant.y, 0, 1) == 0:
-            if clamp(self.coord.quadrant.x, 0, 1) == 0:
+        quadrant_x = clamp(self.coord.quadrant.x, 0, 1)
+        quadrant_y = clamp(self.coord.quadrant.y, 0, 1)
+        if quadrant_y == 0:
+            if quadrant_x == 0:
                 top_left = self.quadrants[0]
                 top_right = self.quadrants[1]
                 bottom_left = self.quadrants[2]
@@ -210,7 +204,7 @@ class ScrollBuffer:
                 bottom_left = self.quadrants[3]
                 bottom_right = self.quadrants[2]
         else:
-            if clamp(self.coord.quadrant.x, 0, 1) == 0:
+            if quadrant_x == 0:
                 top_left = self.quadrants[2]
                 top_right = self.quadrants[3]
                 bottom_left = self.quadrants[0]
@@ -232,7 +226,6 @@ class ScrollBuffer:
         self.draw_rect(top_left, bottom_right)
 
     def draw_rect(self, top_left, bottom_right):
-        top_left_quad, top_right_quad, bottom_left_quad, bottom_right_quad = self.quadrants
         map_offset_x, map_offset_y = self.map_offset
         width = abs(bottom_right.as_tiles().x - top_left.as_tiles().x)
         height = abs(bottom_right.as_tiles().y - top_left.as_tiles().y)
@@ -243,26 +236,26 @@ class ScrollBuffer:
                 quadrant_y = clamp(coord.quadrant.y, 0, 1)
                 if quadrant_y == 0:
                     if quadrant_x == 0:
-                        quadrant = top_left_quad
+                        quadrant = self.quadrants[0]
                         quad_offset_x = 0
                         quad_offset_y = 0
                     else:
-                        quadrant = top_right_quad
+                        quadrant = self.quadrants[1]
                         quad_offset_x = map.Map.section_width
                         quad_offset_y = 0
                 else:
                     if quadrant_x == 0:
-                        quadrant = bottom_left_quad
+                        quadrant = self.quadrants[2]
                         quad_offset_x = 0
                         quad_offset_y = map.Map.section_height
                     else:
-                        quadrant = bottom_right_quad
+                        quadrant = self.quadrants[3]
                         quad_offset_x = map.Map.section_width
                         quad_offset_y = map.Map.section_height
                 quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(),
                     (
-                        (top_left.tile.x + col - quad_offset_x) * tile.TILE_SIZE,
-                        (top_left.tile.y + row - quad_offset_y) * tile.TILE_SIZE,
+                        coord.tile.x * tile.TILE_SIZE,
+                        coord.tile.y * tile.TILE_SIZE,
                         tile.TILE_SIZE,
                         tile.TILE_SIZE
                     )
@@ -273,8 +266,8 @@ class ScrollBuffer:
                 )
                 if tile_surface:
                     quadrant.blit(tile_surface, (
-                        (top_left.tile.x + col - quad_offset_x) * tile.TILE_SIZE,
-                        (top_left.tile.y + row - quad_offset_y) * tile.TILE_SIZE)
+                        coord.tile.x * tile.TILE_SIZE,
+                        coord.tile.y * tile.TILE_SIZE)
                     )
 
 

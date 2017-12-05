@@ -167,14 +167,15 @@ class ScrollBuffer:
 
     def __init__(self, renderer):
         self.renderer = renderer
+        quad_surface = lambda: pygame.Surface((map.Map.section_width * tile.TILE_SIZE, map.Map.section_height * tile.TILE_SIZE))
         self.quadrants = [
-            pygame.Surface((map.Map.section_width * tile.TILE_SIZE, map.Map.section_height * tile.TILE_SIZE))
-            for _ in range(0, 4)
+            [quad_surface(), quad_surface()],
+            [quad_surface(), quad_surface()]
         ]
-        self.quadrants[0].fill((255, 0, 0))
-        self.quadrants[1].fill((0, 255, 0))
-        self.quadrants[2].fill((0, 0, 255))
-        self.quadrants[3].fill((255, 0, 255))
+        self.quadrants[0][0].fill((255, 0, 0))
+        self.quadrants[0][1].fill((0, 255, 0))
+        self.quadrants[1][0].fill((0, 0, 255))
+        self.quadrants[1][1].fill((255, 0, 255))
         self.map_offset = (-int(map.Map.section_width / 2), -int(map.Map.section_height / 2))
         self.coord = LocalCoord()
         self.coord = self.coord.moved(int(map.Map.section_width / 2) * tile.TILE_SIZE, int(map.Map.section_height / 2) * tile.TILE_SIZE)
@@ -194,26 +195,26 @@ class ScrollBuffer:
         quadrant_y = clamp(self.coord.quadrant.y, 0, 1)
         if quadrant_y == 0:
             if quadrant_x == 0:
-                top_left = self.quadrants[0]
-                top_right = self.quadrants[1]
-                bottom_left = self.quadrants[2]
-                bottom_right = self.quadrants[3]
+                top_left = self.quadrants[0][0] #0
+                top_right = self.quadrants[0][1] #1
+                bottom_left = self.quadrants[1][0] #2
+                bottom_right = self.quadrants[1][1] #3
             else:
-                top_left = self.quadrants[1]
-                top_right = self.quadrants[0]
-                bottom_left = self.quadrants[3]
-                bottom_right = self.quadrants[2]
+                top_left = self.quadrants[0][1]
+                top_right = self.quadrants[0][0]
+                bottom_left = self.quadrants[1][1]
+                bottom_right = self.quadrants[1][0]
         else:
             if quadrant_x == 0:
-                top_left = self.quadrants[2]
-                top_right = self.quadrants[3]
-                bottom_left = self.quadrants[0]
-                bottom_right = self.quadrants[1]
+                top_left = self.quadrants[1][0]
+                top_right = self.quadrants[1][1]
+                bottom_left = self.quadrants[0][0]
+                bottom_right = self.quadrants[0][1]
             else:
-                top_left = self.quadrants[3]
-                top_right = self.quadrants[2]
-                bottom_left = self.quadrants[1]
-                bottom_right = self.quadrants[0]
+                top_left = self.quadrants[1][1]
+                top_right = self.quadrants[1][0]
+                bottom_left = self.quadrants[0][1]
+                bottom_right = self.quadrants[0][0]
         surface.blit(top_left, (0, 0), area=(left, top, ScrollBuffer.quad_width - left, ScrollBuffer.quad_height - top))
         surface.blit(top_right, (ScrollBuffer.quad_width - left, 0), area=(0, top, right, ScrollBuffer.quad_height - top))
         surface.blit(bottom_left, (0, ScrollBuffer.quad_height - top), area=(left, 0, ScrollBuffer.quad_width - left, bottom))
@@ -234,24 +235,7 @@ class ScrollBuffer:
                 coord = top_left.moved(col * tile.TILE_SIZE, row * tile.TILE_SIZE)
                 quadrant_x = clamp(coord.quadrant.x, 0, 1)
                 quadrant_y = clamp(coord.quadrant.y, 0, 1)
-                if quadrant_y == 0:
-                    if quadrant_x == 0:
-                        quadrant = self.quadrants[0]
-                        quad_offset_x = 0
-                        quad_offset_y = 0
-                    else:
-                        quadrant = self.quadrants[1]
-                        quad_offset_x = map.Map.section_width
-                        quad_offset_y = 0
-                else:
-                    if quadrant_x == 0:
-                        quadrant = self.quadrants[2]
-                        quad_offset_x = 0
-                        quad_offset_y = map.Map.section_height
-                    else:
-                        quadrant = self.quadrants[3]
-                        quad_offset_x = map.Map.section_width
-                        quad_offset_y = map.Map.section_height
+                quadrant = self.quadrants[quadrant_y][quadrant_x]
                 quadrant.fill(self.renderer.cartridge.lookup_universal_background_color(),
                     (
                         coord.tile.x * tile.TILE_SIZE,

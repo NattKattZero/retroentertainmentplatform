@@ -182,10 +182,8 @@ class ScrollBuffer:
         upper_left = LocalCoord()
         upper_left.left = 0
         upper_left.top = 0
-        lower_right = LocalCoord()
-        lower_right.right = map.Map.section_width * 2
-        lower_right.bottom = map.Map.section_height * 2
-        self.draw_rect(upper_left, lower_right)
+        lower_right = upper_left.moved(map.Map.section_width, map.Map.section_height)
+        # self.draw_rect(upper_left, lower_right)
     
     def swap_vertical_axis(self):
         top_left, top_right, bottom_left, bottom_right = self.quadrants
@@ -200,8 +198,8 @@ class ScrollBuffer:
         top = self.coord.tile.y * tile.TILE_SIZE + self.coord.pixel.y
         right = left + ScrollBuffer.quad_width
         bottom = top + ScrollBuffer.quad_height
-        if self.coord.quadrant.y == 0:
-            if self.coord.quadrant.x == 0:
+        if clamp(self.coord.quadrant.y, 0, 1) == 0:
+            if clamp(self.coord.quadrant.x, 0, 1) == 0:
                 top_left = self.quadrants[0]
                 top_right = self.quadrants[1]
                 bottom_left = self.quadrants[2]
@@ -212,7 +210,7 @@ class ScrollBuffer:
                 bottom_left = self.quadrants[3]
                 bottom_right = self.quadrants[2]
         else:
-            if self.coord.quadrant[0] == 0:
+            if clamp(self.coord.quadrant.x, 0, 1) == 0:
                 top_left = self.quadrants[2]
                 top_right = self.quadrants[3]
                 bottom_left = self.quadrants[0]
@@ -230,20 +228,16 @@ class ScrollBuffer:
     def scroll(self, delta_x, delta_y):
         self.coord = self.coord.moved(delta_x, delta_y)
         top_left = self.coord
-        bottom_right = top_left.moved(map.Map.section_width * tile.TILE_SIZE + 1, map.Map.section_height * tile.TILE_SIZE + 1)
+        bottom_right = top_left.moved((map.Map.section_width + 1) * tile.TILE_SIZE, (map.Map.section_height + 1) * tile.TILE_SIZE)
         self.draw_rect(top_left, bottom_right)
 
     def draw_rect(self, top_left, bottom_right):
-        # print(f'draw_rect. top_left: {top_left}, bottom_right: {bottom_right}')
         top_left_quad, top_right_quad, bottom_left_quad, bottom_right_quad = self.quadrants
         map_offset_x, map_offset_y = self.map_offset
-        # FIXME: should use bottom_right instead of hard-coding width/height
-        width = abs(bottom_right.as_tiles().x - top_left.as_tiles().x) + 1
-        height = abs(bottom_right.as_tiles().y - top_left.as_tiles().y) + 1
-        # for row in range(0, map.Map.section_height):
-        for row in range(top_left.tile.y, height):
-            # for col in range(map.Map.section_width+1, map.Map.section_width+2):
-            for col in range(top_left.tile.x, width):
+        width = abs(bottom_right.as_tiles().x - top_left.as_tiles().x)
+        height = abs(bottom_right.as_tiles().y - top_left.as_tiles().y)
+        for row in range(0, height):
+            for col in range(0, width):
                 coord = top_left.moved(col * tile.TILE_SIZE, row * tile.TILE_SIZE)
                 quadrant_x = clamp(coord.quadrant.x, 0, 1)
                 quadrant_y = clamp(coord.quadrant.y, 0, 1)

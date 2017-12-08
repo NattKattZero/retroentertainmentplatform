@@ -180,11 +180,9 @@ class ScrollBuffer:
         self.coord = LocalCoord()
         self.coord = self.coord.moved(int(map.Map.section_width / 2) * tile.TILE_SIZE, int(map.Map.section_height / 2) * tile.TILE_SIZE)
         # fill in the whole buffer initially
-        upper_left = LocalCoord()
-        upper_left.left = 0
-        upper_left.top = 0
-        lower_right = upper_left.moved(map.Map.section_width, map.Map.section_height)
-        # self.draw_rect(upper_left, lower_right)
+        upper_left = self.coord
+        lower_right = upper_left.moved((map.Map.section_width + 1) * tile.TILE_SIZE, (map.Map.section_height + 1) * tile.TILE_SIZE)
+        self.draw_rect(upper_left, lower_right)
         
     def render(self, surface):
         left = self.coord.tile.x * tile.TILE_SIZE + self.coord.pixel.x
@@ -221,10 +219,28 @@ class ScrollBuffer:
         surface.blit(bottom_right, (ScrollBuffer.quad_width - left, ScrollBuffer.quad_height - top), area=(0, 0, right, bottom))
 
     def scroll(self, delta_x, delta_y):
+        old_coord = self.coord
         self.coord = self.coord.moved(delta_x, delta_y)
-        top_left = self.coord
-        bottom_right = top_left.moved((map.Map.section_width + 1) * tile.TILE_SIZE, (map.Map.section_height + 1) * tile.TILE_SIZE)
-        self.draw_rect(top_left, bottom_right)
+        delta_x_tiles = self.coord.as_tiles().x - old_coord.as_tiles().x
+        delta_y_tiles = self.coord.as_tiles().y - old_coord.as_tiles().y
+        for x in range(0, abs(delta_x_tiles)):
+            if delta_x_tiles >= 0:
+                top_left = old_coord.moved((map.Map.section_width + x + 1) * tile.TILE_SIZE, 0)
+                bottom_right = top_left.moved(tile.TILE_SIZE, (map.Map.section_height + 1) * tile.TILE_SIZE)
+                self.draw_rect(top_left, bottom_right)
+            else:
+                top_left = old_coord.moved(-x, 0)
+                bottom_right = top_left.moved(tile.TILE_SIZE, (map.Map.section_height + 1) * tile.TILE_SIZE)
+                self.draw_rect(top_left, bottom_right)
+        for y in range(0, abs(delta_y_tiles)):
+            if delta_y_tiles >= 0:
+                top_left = old_coord.moved(0, (map.Map.section_height + y + 1) * tile.TILE_SIZE)
+                bottom_right = top_left.moved((map.Map.section_width + 1) * tile.TILE_SIZE, tile.TILE_SIZE)
+                self.draw_rect(top_left, bottom_right)
+            else:
+                top_left = old_coord.moved(0, -y)
+                bottom_right = top_left.moved((map.Map.section_width + 1) * tile.TILE_SIZE, tile.TILE_SIZE)
+                self.draw_rect(top_left, bottom_right)
 
     def draw_rect(self, top_left, bottom_right):
         map_offset_x, map_offset_y = self.map_offset

@@ -41,6 +41,22 @@ class TestLocalCoord(unittest.TestCase):
         self.assertEqual(moved_one_screen.quadrant.x, 1)
         self.assertEqual(moved_one_screen.tile.x, 0)
         self.assertEqual(moved_one_screen.pixel.x, 0)
+        # test moving in the -x direction
+        l = renderer.LocalCoord()
+        moved_one_pixel_left = l.moved(-1, 0)
+        # should not have moved at all since LocalCoord must be postive
+        self.assertEqual(moved_one_pixel_left.tile.x, 0)
+        moved_one_tile_left = l.moved(-tile.TILE_SIZE, 0)
+        self.assertEqual(moved_one_tile_left.tile.x, 0)
+        self.assertEqual(moved_one_tile_left.pixel.x, 0)
+        # test moving right, then left
+        l = renderer.LocalCoord()
+        moved_17_pixels_right = l.moved(17, 0)
+        self.assertEqual(moved_17_pixels_right.tile.x, 2)
+        self.assertEqual(moved_17_pixels_right.pixel.x, 1)
+        moved_2_pixels_left = moved_17_pixels_right.moved(-2, 0)
+        self.assertEqual(moved_2_pixels_left.tile.x, 1)
+        self.assertEqual(moved_2_pixels_left.pixel.x, tile.TILE_SIZE - 1)
 
     def test_as_pixels(self):
         l = renderer.LocalCoord()

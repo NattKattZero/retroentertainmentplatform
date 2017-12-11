@@ -46,6 +46,7 @@ class Renderer:
 
         bob_game.add_entity(bob)
         # -
+        scroll_direc = 1
         is_running = True
         while is_running:
             for event in pygame.event.get():
@@ -82,7 +83,9 @@ class Renderer:
             bob_game.advance()
             # camera.follow(bob.rect.left, bob.rect.top)
             scroll_buffer.render(view_surface)
-            scroll_buffer.scroll(-1, 0)
+            scroll_buffer.scroll(scroll_direc, 0)
+            if scroll_buffer.coord.quadrant.x >= 4:
+                scroll_direc = -1
             self.render_entities(bob_game.entities, view_surface, scroll_buffer)
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)
@@ -182,7 +185,7 @@ class ScrollBuffer:
         # fill in the whole buffer initially
         upper_left = self.coord
         lower_right = upper_left.moved((map.Map.section_width + 1) * tile.TILE_SIZE, (map.Map.section_height + 1) * tile.TILE_SIZE)
-        # self.draw_rect(upper_left, lower_right)
+        self.draw_rect(upper_left, lower_right)
         
     def render(self, surface):
         left = self.coord.tile.x * tile.TILE_SIZE + self.coord.pixel.x
@@ -227,20 +230,20 @@ class ScrollBuffer:
             if delta_x_tiles >= 0:
                 top_left = old_coord.moved((map.Map.section_width + x + 1) * tile.TILE_SIZE, 0)
                 bottom_right = top_left.moved(tile.TILE_SIZE, (map.Map.section_height + 1) * tile.TILE_SIZE)
-                # self.draw_rect(top_left, bottom_right)
+                self.draw_rect(top_left, bottom_right)
             else:
-                top_left = old_coord.moved(-x, old_coord.tile.y)
+                top_left = old_coord.moved(-x -1, old_coord.tile.y)
                 bottom_right = top_left.moved(tile.TILE_SIZE, (map.Map.section_height * 2) * tile.TILE_SIZE)
-                # self.draw_rect(top_left, bottom_right)
+                self.draw_rect(top_left, bottom_right)
         for y in range(0, abs(delta_y_tiles)):
             if delta_y_tiles >= 0:
                 top_left = old_coord.moved(old_coord.tile.x, (map.Map.section_height + y + 1) * tile.TILE_SIZE)
                 bottom_right = top_left.moved((map.Map.section_width * 2) * tile.TILE_SIZE, tile.TILE_SIZE)
-                # self.draw_rect(top_left, bottom_right)
+                self.draw_rect(top_left, bottom_right)
             else:
                 top_left = old_coord.moved(old_coord.tile.x, -y)
                 bottom_right = top_left.moved((map.Map.section_width *2) * tile.TILE_SIZE, tile.TILE_SIZE)
-                # self.draw_rect(top_left, bottom_right)
+                self.draw_rect(top_left, bottom_right)
 
     def draw_rect(self, top_left, bottom_right):
         map_offset_x, map_offset_y = self.map_offset

@@ -15,6 +15,8 @@ class Renderer:
     def __init__(self, cartridge):
         self.cartridge = cartridge
         self.tile_surface_cache = {}
+        self.game = None
+        self.scroll_buffer = None
 
     def render(self):
         clock = pygame.time.Clock()
@@ -23,12 +25,12 @@ class Renderer:
         # display_surface = pygame.display.set_mode((1440, 900), pygame.FULLSCREEN)
         view_surface = pygame.Surface((map.Map.section_width * tile.TILE_SIZE, map.Map.section_height * tile.TILE_SIZE))
         pressed_keys = set()
-        scroll_buffer = ScrollBuffer(renderer=self)
+        self.scroll_buffer = ScrollBuffer(renderer=self)
         scroll_x = 0
         scroll_y = 0
         # testing sprites
-        camera = Camera(scroll_buffer=scroll_buffer, follow_mode=Camera.FOLLOW_CENTER)
-        bob_game = game.Game(self.cartridge)
+        camera = Camera(scroll_buffer=self.scroll_buffer, follow_mode=Camera.FOLLOW_CENTER)
+        self.game = game.Game(self.cartridge)
         bob = game.Entity(
             LocalCoord().moved(35 * tile.TILE_SIZE, 24 * tile.TILE_SIZE),
             # LocalCoord(),
@@ -40,7 +42,7 @@ class Renderer:
             )
         )
         
-        bob_game.add_entity(bob)
+        self.game.add_entity(bob)
         # -
         is_running = True
         while is_running:
@@ -64,6 +66,8 @@ class Renderer:
                         bob.vector = bob.vector.add(physics.Vector(x=0, y=-25))
                     pressed_keys.add(event.key)
                 elif event.type == pygame.KEYUP:
+                    if event.key == pygame.K_ESCAPE:
+                        is_running = False
                     if event.key in pressed_keys:
                         pressed_keys.remove(event.key)
             for key in pressed_keys:
@@ -75,33 +79,29 @@ class Renderer:
                     bob.vector = bob.vector.add(physics.Vector(x=0, y=1))
                 elif key == pygame.K_UP:
                     bob.vector = bob.vector.add(physics.Vector(x=0, y=-1))
-            bob_game.advance()
+            self.clear_entities()
+            self.game.advance()
             # camera.follow(bob.coord.as_pixels().x, bob.coord.as_pixels().y)
-            scroll_buffer.render(view_surface)
-            self.render_entities(bob_game.entities, view_surface, scroll_buffer)
+            self.render_entities()
+            self.scroll_buffer.render(view_surface)
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)
             pygame.display.update()
             clock.tick(60)
         pygame.quit()
 
-    def render_entities(self, entities, view_surface, scroll_buffer):
-        for entity in entities:
-            scroll_buffer.draw_rect(top_left=entity.coord,
+    def render_entities(self):
+        for entity in self.game.entities:
+            self.scroll_buffer.draw_rect(top_left=entity.coord,
                 bottom_right=entity.coord.moved(entity.tiled_area.width * tile.TILE_SIZE, entity.tiled_area.height * tile.TILE_SIZE),
                 tiled_area=entity.tiled_area)
-        """
-        map_offset_x, map_offset_y = scroll_buffer.map_offset
-        for entity in entities:
-            for row, tile_row in enumerate(entity.tiled_area.tiles):
-                for col, tile_and_attr in enumerate(tile_row):
-                    tile_number, attr = tile_and_attr
-                    surface = self.surface_for_tile(tile_number, attr=attr)
-                    view_surface.blit(surface,
-                        (entity.coord.as_pixels().x + (col) * tile.TILE_SIZE,
-                        entity.coord.as_pixels().y + (row) * tile.TILE_SIZE)
-                    )
-        """
+
+    def clear_entities(self):
+        for entity in self.game.entities:
+            self.scroll_buffer.draw_rect(top_left=entity.coord,
+                bottom_right=entity.coord.moved(entity.tiled_area.width * tile.TILE_SIZE, entity.tiled_area.height * tile.TILE_SIZE),
+                tiled_area=None)
+
 
     def surface_for_map_tile(self, map_col, map_row):
         tile_number = self.cartridge.map.get_tile(map_row, map_col)

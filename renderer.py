@@ -98,8 +98,9 @@ class Renderer:
 
     def clear_entities(self):
         for entity in self.game.entities:
-            self.scroll_buffer.draw_rect(top_left=entity.coord,
-                bottom_right=entity.coord.moved(entity.tiled_area.width * tile.TILE_SIZE, entity.tiled_area.height * tile.TILE_SIZE),
+            truncated_coord = entity.coord.truncated_pixels()
+            self.scroll_buffer.draw_rect(top_left=truncated_coord,
+                bottom_right=truncated_coord.moved((entity.tiled_area.width + 1) * tile.TILE_SIZE, (entity.tiled_area.height + 1) * tile.TILE_SIZE),
                 tiled_area=None)
 
 
@@ -330,6 +331,13 @@ class LocalCoord():
         new_coord.quadrant = Point(quadrant_x, quadrant_y)
         new_coord.tile = Point(tile_x, tile_y)
         new_coord.pixel = Point(pixel_x, pixel_y)
+        return new_coord
+
+    def truncated_pixels(self):
+        new_coord = LocalCoord()
+        new_coord.quadrant = self.quadrant
+        new_coord.tile = self.tile
+        new_coord.pixel = Point(0, 0)
         return new_coord
 
     def as_pixels(self):

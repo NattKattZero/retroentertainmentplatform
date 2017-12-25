@@ -32,8 +32,8 @@ class Renderer:
         camera = Camera(scroll_buffer=self.scroll_buffer, follow_mode=Camera.FOLLOW_CENTER)
         self.game = game.Game(self.cartridge)
         bob = game.Entity(
-            LocalCoord().moved(35 * tile.TILE_SIZE, 24 * tile.TILE_SIZE),
-            # LocalCoord(),
+            # LocalCoord().moved(35 * tile.TILE_SIZE, 24 * tile.TILE_SIZE),
+            LocalCoord(),
             tiled_area=map.TiledArea(
                 tile_data=[0xD, 0xE, 0xF, 0x10, 0x11, 0x12],
                 attr_data=[2, 2, 2, 2, 2, 2],
@@ -79,30 +79,28 @@ class Renderer:
                     bob.vector = bob.vector.add(physics.Vector(x=0, y=1))
                 elif key == pygame.K_UP:
                     bob.vector = bob.vector.add(physics.Vector(x=0, y=-1))
-            self.clear_entities()
             self.game.advance()
             # camera.follow(bob.coord.as_pixels().x, bob.coord.as_pixels().y)
-            self.render_entities()
             self.scroll_buffer.render(view_surface)
+            self.render_entities(view_surface)
             # may want option for smoothscale
             pygame.transform.scale(view_surface, (1024, 768), display_surface)
             pygame.display.update()
             clock.tick(60)
         pygame.quit()
 
-    def render_entities(self):
+    def render_entities(self, view_surface):
         for entity in self.game.entities:
-            self.scroll_buffer.draw_rect(top_left=entity.coord,
-                bottom_right=entity.coord.moved(entity.tiled_area.width * tile.TILE_SIZE, entity.tiled_area.height * tile.TILE_SIZE),
-                tiled_area=entity.tiled_area)
-
-    def clear_entities(self):
-        for entity in self.game.entities:
-            truncated_coord = entity.coord.truncated_pixels()
-            self.scroll_buffer.draw_rect(top_left=truncated_coord,
-                bottom_right=truncated_coord.moved((entity.tiled_area.width + 1) * tile.TILE_SIZE, (entity.tiled_area.height + 1) * tile.TILE_SIZE),
-                tiled_area=None)
-
+            for row in range(0, entity.tiled_area.height):
+                for col in range(0, entity.tiled_area.width):
+                    coord = entity.coord.moved(col * tile.TILE_SIZE, row * tile.TILE_SIZE)
+                    tile_number, attr = entity.tiled_area.tiles[row][col]
+                    tile_surface = self.surface_for_tile(tile_number, attr)
+                    if tile_surface:
+                        view_surface.blit(tile_surface, (
+                            coord.tile.x * tile.TILE_SIZE + coord.pixel.x,
+                            coord.tile.y * tile.TILE_SIZE + coord.pixel.y)
+                        )
 
     def surface_for_map_tile(self, map_col, map_row):
         tile_number = self.cartridge.map.get_tile(map_row, map_col)

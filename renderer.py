@@ -119,6 +119,7 @@ class Renderer:
         palette = attr & 0xF
         tile_data = self.cartridge.tile_catalog[tile_number - 1]
         surface = pygame.Surface((tile.TILE_SIZE, tile.TILE_SIZE))
+        surface.set_colorkey((1, 1, 1))
         pix_array = pygame.PixelArray(surface)
         for row in range(0, tile.TILE_SIZE):
             for col in range(0, tile.TILE_SIZE):
@@ -126,7 +127,7 @@ class Renderer:
                 if p > 0:
                     color = self.cartridge.lookup_background_color(palette, p)
                 else:
-                    color = self.cartridge.lookup_universal_background_color()
+                    color = (1, 1, 1)
                 if transform == 0:
                     pix_array[col, row] = color
                 elif transform == 1:  # vertical axis flip

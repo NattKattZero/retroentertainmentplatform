@@ -32,8 +32,8 @@ class Renderer:
         camera = Camera(scroll_buffer=self.scroll_buffer, follow_mode=Camera.FOLLOW_CENTER)
         self.game = game.Game(self.cartridge)
         bob = game.Entity(
-            # LocalCoord().moved(35 * tile.TILE_SIZE, 24 * tile.TILE_SIZE),
-            LocalCoord(),
+            LocalCoord().moved(map.Map.section_width / 2 * tile.TILE_SIZE, (map.Map.section_height / 2) * tile.TILE_SIZE),
+            # LocalCoord(),
             tiled_area=map.TiledArea(
                 tile_data=[0xD, 0xE, 0xF, 0x10, 0x11, 0x12],
                 attr_data=[2, 2, 2, 2, 2, 2],
@@ -80,7 +80,7 @@ class Renderer:
                 elif key == pygame.K_UP:
                     bob.vector = bob.vector.add(physics.Vector(x=0, y=-1))
             self.game.advance()
-            # camera.follow(bob.coord.as_pixels().x, bob.coord.as_pixels().y)
+            camera.follow(bob.coord.as_pixels().x, bob.coord.as_pixels().y)
             self.scroll_buffer.render(view_surface)
             self.render_entities(view_surface)
             # may want option for smoothscale
@@ -153,7 +153,7 @@ class Camera:
             delta_y = y - self.y
             self.x = x
             self.y = y
-            self.scroll_buffer.scroll(delta_x, delta_y)
+            self.scroll_buffer.scroll(delta_x, 0)
         elif self.follow_mode == Camera.FOLLOW_LEAD:
             view_x, view_y = self.scroll_buffer.map_to_view_coord((x, y))
             if view_x < (map.Map.section_width * tile.TILE_SIZE) * ( 1 / 3 ) or view_x > (map.Map.section_width * tile.TILE_SIZE) * ( 2 / 3 ):
@@ -243,7 +243,7 @@ class ScrollBuffer:
                 bottom_right = top_left.moved((map.Map.section_width *2) * tile.TILE_SIZE, tile.TILE_SIZE)
                 self.draw_rect(top_left, bottom_right)
 
-    def draw_rect(self, top_left, bottom_right, tiled_area=None):
+    def draw_rect(self, top_left, bottom_right):
         map_offset_x, map_offset_y = self.map_offset
         width = abs(bottom_right.as_tiles().x - top_left.as_tiles().x)
         height = abs(bottom_right.as_tiles().y - top_left.as_tiles().y)
@@ -261,18 +261,14 @@ class ScrollBuffer:
                         tile.TILE_SIZE
                     )
                 )
-                if not tiled_area:
-                    tile_surface = self.renderer.surface_for_map_tile(
-                        (coord.quadrant.x * map.Map.section_width + coord.tile.x) + map_offset_x,
-                        (coord.quadrant.y * map.Map.section_height + coord.tile.y) + map_offset_y
-                    )
-                else:
-                    tile_number, attr = tiled_area.tiles[row][col]
-                    tile_surface = self.renderer.surface_for_tile(tile_number, attr)
+                tile_surface = self.renderer.surface_for_map_tile(
+                    (coord.quadrant.x * map.Map.section_width + coord.tile.x) + map_offset_x,
+                    (coord.quadrant.y * map.Map.section_height + coord.tile.y) + map_offset_y
+                )
                 if tile_surface:
                     quadrant.blit(tile_surface, (
-                        coord.tile.x * tile.TILE_SIZE + coord.pixel.x,
-                        coord.tile.y * tile.TILE_SIZE + coord.pixel.y)
+                        coord.tile.x * tile.TILE_SIZE,
+                        coord.tile.y * tile.TILE_SIZE)
                     )
 
 
